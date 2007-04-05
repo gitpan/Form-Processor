@@ -1,0 +1,12 @@
+-   Make sure that dependency uses a Field.pm method to test for not_blank
+    so that can be defined per field.
+
+-   Add localization tools to error messages.
+
+-   Add warnings in addition to errors.  The example would be validating
+    HTML where Tidy reports an error or warning that you wish to ignore.
+    This would be an extra checkbox next to the warnings.
+
+
+
+
