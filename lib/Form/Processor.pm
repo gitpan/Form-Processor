@@ -5,7 +5,7 @@ use base qw/ Rose::Object  Form::Processor::Model /;
 use Carp;
 use UNIVERSAL::require;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 # Define basic instance interface

@@ -1,4 +1,7 @@
 Revision history for Perl extension Form::Processor.
+0.04 Sat Apr  7 05:32:38 UTC 2007
+        Add UNIVERSAL::require as dependency.
+        Caught by a fine CPAN tester.
 
 0.03 Tue Apr  3 21:35:36 UTC 2007
         Rename to Form::Processor for CPAN release
