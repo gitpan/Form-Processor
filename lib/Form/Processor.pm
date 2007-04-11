@@ -4,8 +4,10 @@ use warnings;
 use base qw/ Rose::Object  Form::Processor::Model /;
 use Carp;
 use UNIVERSAL::require;
+use Locale::Maketext;
+use Form::Processor::I18N;  # base class for language files
 
-our $VERSION = '0.04';
+our $VERSION = '0.06';
 
 
 # Define basic instance interface
@@ -28,6 +30,7 @@ use Rose::Object::MakeMethods::Generic (
         name_prefix     => {},  # prefix used on all name fields.
         init_object     => {},  # provides a way to init from another object.
         user_data       => {},  # Just a place to store user data.
+        language_handle => { interface => 'get_set_init' },  # Locale::Maketext language handle
     ],
 
 
@@ -731,7 +734,7 @@ sub build_form {
 
     my $profile = $self->profile;
 
-    die "Please define 'profile' method in subclass" unless ref $profile eq 'HASH';
+    croak "Please define 'profile' method in subclass" unless ref $profile eq 'HASH';
 
 
     ### $$$ look at all keys in profile and allow keys to be Field names.
@@ -804,7 +807,7 @@ sub load_field_options {
 
     @options = @{$options[0]} if ref $options[0];
 
-    die "Options array must contain an even number of elements for field " . $field->name
+    croak "Options array must contain an even number of elements for field " . $field->name
         if @options % 2;
 
     my @opts;
@@ -889,7 +892,7 @@ sub make_field {
 
     $type = $self->guess_field_type( $name ) if $type eq 'Auto';
 
-    Carp::croak "Failed to set field type for field [$name]" unless $type;
+    croak "Failed to set field type for field [$name]" unless $type;
 
     my $class = $type =~ /^\+/
         ? $type
@@ -1053,7 +1056,7 @@ sub field {
 
     return if $no_die;
 
-    die "Failed to lookup field name [$name] in form [$self]";
+    croak "Failed to lookup field name [$name] in form [$self]";
 }
 
 =item exists
@@ -1066,6 +1069,36 @@ sub exists {
     my ($self, $name) = @_;
     return $self->field( $name, 1 );
 }
+
+
+=item language_handle
+
+Set or get the Locale::Maketext language handle.  If not set will look for a
+language handle in the environment variable $ENV{LANGUAGE_HANDLE} and
+otherwise will Create a default language handler using the name space:
+
+    Form::Processor::I18N
+
+You can add your own language classes to this name space, but a more
+common use might be to provide an application-wide language handler.
+
+The language handler can be passed in when creating your form instance
+or set after the object is created.
+
+=cut
+
+sub init_language_handle {
+    my $self = shift;
+
+    my $lh = $ENV{LANGUAGE_HANDLE} || Form::Processor::I18N->get_handle ||
+        die "Failed call to Text::Maketext->get_handle";
+
+    return $lh;
+
+}
+
+
+
 
 
 =item validate
@@ -1122,6 +1155,8 @@ here does.
 
 sub validate {
     my ( $self, $params ) = @_;
+
+    $params ||= {};
 
 
     return $self->validated if $self->ran_validation;
@@ -1350,10 +1385,10 @@ which is probably incorrect.
 
 sub value_changed {
     my ( $self, $name ) = @_;
-    die "value_chagned requires a field name" unless $name;
+    croak "value_chagned requires a field name" unless $name;
 
     my $field = ref ($name) ? $name : $self->field( $name );
-    die "Failed to lookup field name [$name]\n" unless $field;
+    croak "Failed to lookup field name [$name]\n" unless $field;
 
     return $field->value_changed;
 }

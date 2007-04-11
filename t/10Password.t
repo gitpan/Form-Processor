@@ -55,8 +55,20 @@ ok( !$field->has_error, 'just right' );
 
 
 package my_form;
+use strict;
+use warnings;
+use base 'Form::Processor';
 
-sub new { bless {}, shift }
+sub profile {
+    return {
+        optional => {
+            login       => 'Text',
+            username    => 'Text',
+            password    => 'Password',
+        },
+    };
+}
+
 
 sub params {
     {

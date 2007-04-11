@@ -1,4 +1,14 @@
 Revision history for Perl extension Form::Processor.
+
+0.06 Tue Apr 10 23:45:15 UTC 2007
+        Added Locale::Maketext support.
+        Language files are empty and can be provided by
+        the user as needed, or a L::M language handle can be
+        passed if using site-wide lexicons.
+
+0.05 Sun Apr  8 17:45:07 UTC 2007
+        Removed locale-dependent tests
+
 0.04 Sat Apr  7 05:32:38 UTC 2007
         Add UNIVERSAL::require as dependency.
         Caught by a fine CPAN tester.

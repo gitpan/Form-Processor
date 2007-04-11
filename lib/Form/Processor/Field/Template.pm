@@ -27,7 +27,7 @@ sub validate {
     my $parser = Template::Parser->new;
 
     unless ( $parser->parse( $field->value) ) {
-        $field->add_error( $parser->error );
+        $field->add_error( 'Template Error: [_1]', $parser->error );
         return;
     }
 

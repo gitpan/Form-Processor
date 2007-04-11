@@ -2,6 +2,7 @@ package Form::Processor::Field;
 use strict;
 use warnings;
 use base 'Rose::Object';
+use Form::Processor::I18N;  # only needed if running without a form object.
 
 
 our $VERSION = '0.01';
@@ -33,7 +34,7 @@ use Rose::Object::MakeMethods::Generic (
     array => [
         errors          => {},
         reset_errors    => { interface => 'reset', hash_key => 'errors' },
-        add_error       => { interface => 'push',  hash_key => 'errors' },
+        add_error_str   => { interface => 'push',  hash_key => 'errors' },
     ],
 );
 
@@ -149,7 +150,33 @@ returns the error (or list of errors if more than one was set)
 
 =item add_error
 
-Add an error to the list of errors
+Add an error to the list of errors.  If $field->form
+is defined then process error message as Maketext input.
+See $form->language_handle for details.
+
+=cut
+
+sub add_error {
+    my $self = shift;
+
+    my $form = $self->form;
+
+    my $lh;
+
+    # Running without a form object?
+    if ( $form ) {
+        $lh = $form->language_handle;
+    }
+    else {
+        $lh = $ENV{LANGUAGE_HANDLE} || Form::Processor::I18N->get_handle ||
+            die "Failed call to Text::Maketext->get_handle";
+    }
+
+    return  $self->add_error_str( $lh->maketext( @_ ) );
+
+}
+
+
 
 =item reest_errors
 

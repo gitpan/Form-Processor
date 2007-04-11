@@ -13,7 +13,7 @@ sub validate {
 
 
     unless ( Email::Valid->address( $self->input ) ) {
-        $self->add_error('Email should be of the format someuser@example.com');
+        $self->add_error('Email should be of the format [_1]', 'someuser@example.com');
         return;
     }
 

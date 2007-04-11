@@ -46,7 +46,7 @@ sub validate {
     eval {  $dt = DateTime->new( %date, time_zone => 'floating' ) };
 
     if ( $@ ) {
-        $self->add_error( "Invalid date [$@]" );
+        $self->add_error( "Invalid date [_1]", "$@" );
         return;
     }
 

@@ -1,12 +1,13 @@
 use strict;
 use warnings;
 use Test::More;
-my $tests = 7;
+my $tests = 8;
 plan tests => $tests;
 
 use_ok( 'Form::Processor' );
 
 my $form = my_form->new;
+
 
 ok( !$form->validate, 'Empty data' );
 
@@ -35,6 +36,10 @@ ok( $form->field('fruit')->has_error, 'fruit has error' );
 ok( $form->field('reqname')->has_error, 'reqname has error' );
 ok( !$form->field('optname')->has_error, 'optname has no error' );
 
+$form->clear;
+ok ( !$form->validate( { email => 'bad_email' } ), 'Validate bad email' );
+warn join "\n", $form->field('email')->errors, "";
+
 
 
 package my_form;
@@ -50,6 +55,7 @@ sub profile {
         },
         optional    => {
             optname     => 'Text',
+            email       => 'Email',
         },
     };
 }

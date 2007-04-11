@@ -34,7 +34,7 @@ SKIP:
 
     $field->input( 'someuser@example.com' );
     $field->validate_field;
-    ok( !$field->has_error, 'Test for errors 2 although probably should faile' );
+    ok( !$field->has_error, 'Test for errors 2 although probably should fail' );
 
 
 }

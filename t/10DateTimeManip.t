@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-plan tests => 18;
+plan tests => 16;
 
 my $class = 'Form::Processor::Field::DateTimeManip';
 my $name = $1 if $class =~ /::([^:]+)$/;
@@ -38,7 +38,6 @@ SKIP:
     is( $field->value->year, 2000, 'Found year');
     is( $field->value->month, 4, 'Found month');
     is( $field->value->day, 25, 'Found day');
-    like( $field->format_value, qr/Tue, Apr 25 2000/, 'formatted' );
 
     $field->input( 'Jan 25, 2000 10:32:12am EST' );
     $field->validate_field;
@@ -47,8 +46,6 @@ SKIP:
     is( $field->value->year, 2000, 'Found year');
     is( $field->value->month, 1, 'Found month');
     is( $field->value->day, 25, 'Found day');
-    $field->value->set_time_zone('America/Chicago');
-    is( $field->format_value, 'Tue, Jan 25 2000 9:32 AM CST', 'formated 2');
 
     $field->input( 'Jan 45, 2000 10:32:12am EST' );
     $field->validate_field;
