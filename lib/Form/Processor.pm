@@ -7,7 +7,7 @@ use UNIVERSAL::require;
 use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 
 # Define basic instance interface

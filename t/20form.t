@@ -38,7 +38,6 @@ ok( !$form->field('optname')->has_error, 'optname has no error' );
 
 $form->clear;
 ok ( !$form->validate( { email => 'bad_email' } ), 'Validate bad email' );
-warn join "\n", $form->field('email')->errors, "";
 
 
 
