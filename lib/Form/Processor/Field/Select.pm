@@ -7,7 +7,8 @@ our $VERSION = '0.01';
 
 use Rose::Object::MakeMethods::Generic (
     array => [
-        options         => {},  # array of hashes.  Probably should make a custom object
+        # Array of hashes with value and label.
+        options         => { interface=> 'get_set_init' },
         reset_options   => { interface => 'reset', hash_key => 'options' },
     ],
     scalar => [
@@ -17,7 +18,7 @@ use Rose::Object::MakeMethods::Generic (
     ],
 );
 
-sub init_widget { 'Select' }
+sub init_widget { 'select' }
 
 =item label_column
 

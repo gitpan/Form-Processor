@@ -1,0 +1,21 @@
+This is a Catalyst demo using Form::Processor.
+
+    Requires:
+        Catalyst::Runtime
+        Template::Toolkit
+
+    Not all fields are displayed because not all modules
+    used by every field in Form::Processor is required.
+    Just trying to avoid CPAN dependency hell.
+
+
+To use
+
+    $ cd FormProcessor
+    $ script/formprocessor_server.pl
+
+Watch carefully for any errors due to missing modules.  Install, re-heat,
+and serve.
+
+Then go to http://localhost:3000
+

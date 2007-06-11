@@ -9,14 +9,13 @@ This field is a display only field
 
 =cut
 
+sub readonly { 1 };  # for html rendering
+
+sub noupdate { 1 }
+
 
 our $VERSION = '0.01';
 
-sub init {
-    my $self = shift;
-    $self->noupdate(1);
-    $self->SUPER::init(@_);
-}
 
 
 

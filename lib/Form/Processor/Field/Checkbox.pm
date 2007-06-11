@@ -5,7 +5,7 @@ use base 'Form::Processor::Field';
 
 our $VERSION = '0.01';
 
-sub init_widget { 'Checkbox' }
+sub init_widget { 'checkbox' }
 
 # Single checkbox 
 sub value {

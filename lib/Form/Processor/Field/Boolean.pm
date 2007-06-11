@@ -5,7 +5,7 @@ use base 'Form::Processor::Field';
 
 our $VERSION = '0.01';
 
-sub init_widget { 'Radio' }
+sub init_widget { 'radio' }  # although not really used.
 
 
 sub value {

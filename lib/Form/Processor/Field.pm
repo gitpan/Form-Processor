@@ -10,7 +10,7 @@ our $VERSION = '0.01';
 
 use Rose::Object::MakeMethods::Generic (
     scalar => [
-        'name',         # field name
+        'name',         # Field's name
         'init_value',   # initial value populated by init_from_object - used to look for changes
                         # not to be confused with the form method init_value().
         'value',        # scalar internal value -- same as init_value at start.
@@ -19,16 +19,30 @@ use Rose::Object::MakeMethods::Generic (
         'label',        # Text label -- not really used much, yet.
         'style',        # Field's generic style to use for css formatting
         'form',         # The parent form
+        'sub_form',     # The field is made up of a sub-form.
         # This is a more generic field type that can be used
         # in template to determine what type of html widget to generate
         widget      =>  { interface => 'get_set_init' },
+        order       =>  { interface => 'get_set_init' },
     ],
 
     boolean => [
         'required',
         'password',
-        'noupdate',     # don't update this field in the database
         'writeonly',    # Don't return this field in params.
+        'clear',        # Don't validate and remove from database.
+
+        # disabled and readonly mirror the html form specification
+        # disabled fields are not suppose to be "successful" and thus
+        # should not be updated.  But.. see "noupdate" below.
+        'disabled',     # Don't update this field in the database.
+        # readonly fields are basically like hidden fields that the UI
+        # should no be able to modify but still are submitted.
+        'readonly',     # Flag to indicate readonly field
+
+        # Since disabled and readonly effect the UI differently
+        # use a separate flag to tell the model to not update a field.
+        'noupdate',     # don't update this field in the database
     ],
 
     array => [
@@ -54,7 +68,12 @@ Form::Processor::Field - Base class for Fields used with Form::Processor
 
 =head1 DESCRIPTION
 
-This is a base class that allows basic functionallity for form fields.
+This is a base class that allows basic functionality for form fields.
+Form fields inherit from this class and thus may have additional methods.
+See the documentation or source for the individual field.
+
+You are encouraged to create specific fields for your application instead of
+simply using the fields included with Form::Processor.
 
 
 =head1 METHODS
@@ -79,9 +98,33 @@ sub init {
         unless $self->name;
 }
 
-=item name
+=item full_name
 
-Sets or returns the name of the field.
+This returns the name of the field, but if the field
+is a child field will prepend the field with the parent's field
+name.  For example, if a field is "month" and the parent's field name
+is "birthday" then this will return "birthday.month".
+
+=cut
+
+sub full_name {
+    my $field = shift;
+
+    my $name = $field->name;
+    my $form = $field->form || return $name;
+    my $parent = $form->parent_field || return $name;
+    return $parent->name . '.' . $name;
+}
+
+=item form
+
+This is a reference to the parent form object.
+
+=item sub_form
+
+A single field can be represented by more than one sub-fields
+contained in a form.  This is a reference to that form.
+
 
 =item id
 
@@ -132,7 +175,35 @@ a group of checkboxes.
 
 =cut
 
-sub init_widget { 'Text' }
+sub init_widget { 'text' }
+
+=item order
+
+This is the field's order used for sorting errors and field lists.
+
+=cut
+
+sub init_order { 1 }
+
+=item set_order
+
+This sets the field's order to the form's field_counter
+and increments the counter.
+
+The purpose of this is when displaying fields, say in a template,
+this can be called with displaying the field to set its order.
+Then a summary of error messages can be displayed in the order
+the fields are on the form.
+
+=cut
+
+sub set_order {
+    my $field = shift;
+    my $form = $field->form;
+    my $order = $form->field_counter || 1;
+    $field->order( $order );
+    $form->field_counter( $order + 1 );
+}
 
 =item value
 
@@ -154,6 +225,10 @@ Add an error to the list of errors.  If $field->form
 is defined then process error message as Maketext input.
 See $form->language_handle for details.
 
+Returns undef.  This allows:
+
+    return $field->add_error( 'bad data' ) if $bad;
+
 =cut
 
 sub add_error {
@@ -163,16 +238,24 @@ sub add_error {
 
     my $lh;
 
+    # By default errors get attached to the field where they happen.
+    my $error_field = $self;
+
     # Running without a form object?
     if ( $form ) {
         $lh = $form->language_handle;
+
+        # If we are a sub-form then redirect errors to the parent field
+        $error_field = $form->parent_field if $form->parent_field;
     }
     else {
         $lh = $ENV{LANGUAGE_HANDLE} || Form::Processor::I18N->get_handle ||
             die "Failed call to Text::Maketext->get_handle";
     }
 
-    return  $self->add_error_str( $lh->maketext( @_ ) );
+    $self->add_error_str( $lh->maketext( @_ ) );
+
+    return;
 
 }
 
@@ -255,9 +338,13 @@ sub trim_value {
 
     return unless defined $value;
 
-    my @values = ref $value ? @$value : ( $value );
+    my @values = ref $value eq 'ARRAY' ? @$value : ( $value );
 
-    s/^\s+//, s/\s+$// for @values;
+    for ( @values ) {
+        next if ref $_;
+        s/^\s+//;
+        s/\s+$//;
+    }
 
     return @values > 1 ? \@values : $values[0];
 }
@@ -385,6 +472,21 @@ flagged as noupdate are skipped when processing by the model.
 
 This is usesful when a form contains extra fields that are not directly
 written to the data store.
+
+=item disabled
+=item readonly
+
+These allow you to give hints to how the html element is genrated.  This have specific
+meanings in the HTML specification, but may not be consistently implemented.
+Disabled controls should not be successful and thus not submitted in forms, where
+readonly fileds can be.  Instead of depending on these field attribues, an
+Form::Processor::Model classes should instead use the L<noupdate> flag
+as an indicator if the field should be ignored or not.
+
+=item clear
+
+This is a flag that says you want to clear the database column for this
+field.  Validation is also not run on this field.
 
 =item writeonly
 

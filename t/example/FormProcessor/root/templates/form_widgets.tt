@@ -1,0 +1,953 @@
+[%
+
+# This is an example of how a template file can be used to generate
+# the html "widgets" needed to generate a form.  There is no
+# requirement to use this template -- feel free to write
+# the html directly in your own template.  But, this
+# is an example of how to automate for generation
+# using a template that deals with setting id and class
+# attributes and generating consistent error messages.
+#
+# NOTE: This template calls "loc()" for localization of text.
+# YOU MUST HAVE A loc() subroutine in the stash for this template
+# to function.  If you don't want to bother with I18N just create
+# a sub in your stash:
+#
+#   $stash->{loc} = sub { join ' ', @_ };
+#
+# But that will not correctly format all messages since strings are
+# formatted for use with Locale::Maketext.
+#
+# To start a form call the form_wrapper block.  This simply wraps
+# all the content in a <form> tag, summary of error messages, and a submit
+# button:
+#
+#   WRAPPER form_wrapper;
+#       PROCESS all_fields;  # your block that generates form fields
+#   END;
+#
+# The "add_fields" BLOCK would then insert the HTML form elements, text, layout
+# etc.  This can be raw html or you can use macros provided by this template.
+#
+# The high-level macro "field()" is used to generate a form element that
+# is wrapped in a <div>, and includes any error messages for that field.
+# So your "add_field" BLOCK might look like:
+#
+#   BLOCK add_fields;
+#       '<fieldset>';
+#       field( 'First name', 'first_name' );
+#       field( 'Last name', 'last_name' );
+#       field( 'Your email', 'email' );
+#   END;
+#
+# Those all require that there's a "form" stash element.  Globals are ugly
+# but normally only working with on major form per request.
+#
+# Macros are used to generate the form items.  At the finest detail are the
+# macros that create the html elements without any enclosing markup
+# but with ids and names automatically created:
+#
+#   MACRO html_element_input( field, optional_input_type  );
+#   MACRO html_element_textarea( field );
+#
+#   MACRO html_element_checkbox_group( field );
+#   MACRO html_element_select( field, add_heading, size, multiple );
+#   MACRO html_element_radio( field );
+#
+# where "field" is either a field object or a field name of the form
+# in the "form" stash variable.
+#
+# The above html_element_* macros can be automatically selected via the macro:
+#
+#   MACRO form_field_element( field );
+#
+# But the selection of presentation is not always fixed -- that is,
+# for a "Select" or "Multiple" type of field checkboxes, radio groups,
+# or select/option lists will be used based on the number of options to
+# display.  Also, if no options exist a message as such will be displayed.
+#
+# To generate a field <label> (e.g. a label for a text field) that includes
+# a "for=" attribute call.
+#
+#   MACRO form_field_label( field );
+#
+# Note that field.label must be defined.
+#
+# To generate a list of error messages for one or more fields
+# there's a WRAPPER:
+#
+#   WRAPPER form_field_errors field_list = [ f.name ];
+#       form_field_label( f, 'Pick a color' );
+#       form_field_element( f );
+#   END;
+#
+# Allowing multiple fields allows grouping fields together and showing
+# their errors all in one place.  This is useful when a number of fields
+# are to be displayed together (perhaps in a single line).
+#
+# There is a wrapper template that wraps content in a <div> and shows associated
+# error messages for a field called "form_field_wrapper".  The "field" stash
+# must hold the field to report on.
+#
+# Finally, for the simple case of a single field:
+#
+#   MACRO field( label_text, field_name, help_text, widget_template );
+#
+# Will combine many of the above macros into basically:
+#
+#   color_field = form.field( 'dolor' );
+#   WRAPPER form_field_wrapper field = color_field;
+#       form_field_label( f, 'Pick a color' );
+#       form_field_element( f );
+#   END;
+#
+# Some fields will be wrapped in a <fieldset> to set them apart for other fields
+# on the form, but mostly the styling is left to css.
+#
+# Calling field( 'foo', 'field_bar' ); will set field "field_bar" label to "foo".
+#
+# There's also a form_field_div wrapper that only wraps the content in a div.
+# See macro(s) below for details.
+#
+#==================================================================================
+
+
+
+#----------------------------------------------------------------------------%][%
+# BLOCK form_wrapper
+#
+# This is called as a wrapper from application templates.  It generates
+# the entire form and (optionally) places a submit button at the bottom.
+#
+#   WRAPPER form_wrapper;
+#       field('First Name:', 'first_name' );
+#       ...
+#   END;
+#
+# Error messages are displayed at the top of the form and also preceding
+# the field with the error.  Error messages are html-escaped.
+# Form::Processor handles localizing the error messages.
+#
+# Form field labels are localized, as is the submit button label.
+#
+# Possible input variables:
+#
+#   item
+#       if defined used for building the form's action url.
+#       Also determines if the submit button should be "Update" or "Create".
+#
+#   action
+#       defines form action, defaults to "edit" plus the item id if item defined.
+#
+#   form_action
+#       If defined overrides the action and item id
+#
+#   form_attributes
+#       Passed to the start_form macro to add additional settings
+#
+#   submit_label
+#       Override the default Create/Edit label
+#
+#   submit_image
+#       url to image to use for submit button.
+#
+#   no_submit_button
+#       If true then don't generate a submit button.
+#
+# TODO: These should be all placed into a hash.
+#
+#----------------------------------------------------------------------------%][%
+
+
+
+    BLOCK form_wrapper;
+
+
+        # Include the style sheet needed to render forms.
+        include_style_sheet( c.uri_for( '/static/form.css' ) );
+
+
+        # Generate the url for the form's action, based on the current
+        # controller action, if not specified.
+        UNLESS form_action;
+            DEFAULT action = c.action.name || 'edit';
+            form_action = item.id ? c.uri_for( action, item.id ) : c.uri_for(action);
+        END;
+
+        # <form> tag
+        start_form( form_action, 'post', form_attributes );
+
+
+        # Display summary of errors at the top of the form
+        PROCESS any_form_errors;
+
+        # Generate form widgets.
+        content;
+
+
+        # Show the submit button
+        UNLESS no_submit_button || form.readonly;
+
+            DEFAULT submit_label = item ? 'Update' : 'Create';
+            submit_label = loc( submit_label );
+
+            '<div class="form-submit">';
+
+            IF submit_image;
+                "<input type='image' class='image' name='submit' alt='$submit_label' src='$submit_image' />";
+
+            ELSE;
+                "<input type='submit' class='button' value='$submit_label' />";
+
+            END;
+            '</div>';
+
+        END;
+
+
+        '</form>';
+
+    END;
+
+#----------------------------------------------------------------------------%][%
+
+# Display a summary of errors at the top of the form.
+# Parameters:
+#   form
+#       Form::Processor object
+#
+#   hide_error_detail
+#       If true then will set display: none.  For example to show with javascript.
+#
+
+    BLOCK any_form_errors;
+
+        RETURN UNLESS form.has_error %]
+
+        <div id="FormErrors" class="error">
+
+            <p class="error">
+                [% loc( 'Form could not be updated. Please see the [quant,_1,error] below', form.errors ) %]
+            </p>
+
+            <div id="FormErrorLinks"[% ' style="display:none;"' IF hide_error_detail %]>
+                <ul>
+                    [% FOR field = form.error_fields %]
+                        [% label = field.label || field.name %]
+                        <li>
+                            <a href="#link_[% field.id | uri | html %]">
+                                [% loc(label) | html %]
+                            </a>
+                        </li>
+                    [% END %]
+                </ul>
+            </div>
+
+        </div>
+        [%
+    END;
+
+#----------------------------------------------------------------------------%][%
+
+# This is called by the application template to display a single field.
+# It wraps the field in a div, and displays the error message.
+#
+#   field( $label, $field_name, $optional_comment, $field_template );
+#
+# The forth parameter may be passed in to override the template that
+# generates the field.
+#
+# Options passed in the stash:
+#
+#   form_checkbox_limit
+#       For multiple selects if over thiVs limit then will use a
+#       multiple-select scroll box, otherwise checkboxes will be used.
+#       Defaults to 12;
+#
+#   form_options_limit
+#       For selects if over this limit will use a drop down box,
+#       otherwise will use a radio select.  Defaults to 10.
+#
+#   no_escape_label
+#       Don't localize or html-escape the field label
+#
+#   break_label
+#       If true then <br /> will be placed after the label
+#
+
+
+    MACRO field(label, name, comment, field_template) BLOCK;
+
+        # Well, macros localize names, but still a bad idea to use "field"
+        SET field = form.field(name);
+
+
+        # Store passed in label in the field
+        CALL field.label(label) IF label;
+
+
+
+        CALL field.style('ltext') UNLESS field.style;  # set default style (class name)
+
+
+        WRAPPER form_field_wrapper;
+            IF field_template;  # Allow way to provide custom template for a field
+                PROCESS $field_template;
+            ELSE;
+                form_field_element( field, 'show_label' );
+                '<br />';
+            END;
+        END;
+
+    END;
+
+#----------------------------------------------------------------------------%][%
+# Wrapper to display errors for one or more fields.
+# Stash:
+#   field_list    - array reference of field names to report on
+#                 - defaults to field.name
+#   form            - form
+#
+# This is a wrapper for two reasons:
+#  1) so errors and field(s) can be wrapped in a <div>
+#  2) so calls to form_field_error can set the field label
+
+
+    BLOCK form_field_errors;
+
+        fields_with_errors = [];
+
+        FOR f = field_list;
+            myfield = form.field( f );
+            fields_with_errors.push( myfield ) IF myfield.has_error;
+        END;
+
+        IF fields_with_errors.size;
+
+            # Give a target for jumping here from error summary at top
+            # of page.
+            '<div>';
+            FOR f = fields_with_errors;
+                '<a name="link_'; f.id | uri | html; '"></a>';
+            END;
+            '</div>';
+
+
+            '<div class="error">';
+
+                '<p>';  # to style just the error messages.
+                FOR f = fields_with_errors;
+
+                    field_label = loc( f.label ) | html;
+
+                    FOR field_error = f.errors;
+
+                        '<br /><pre>' IF field_error.match("\n");
+
+                        IF field_label;
+                            field_label; ': ';
+                        END;
+
+
+                        field_error | html;  # This has been localized by Form::Processor
+
+
+                        '</pre>' IF field_error.match("\n");
+                        '<br />';
+                    END;
+                END;
+                '</p>';
+
+                content;
+            '</div>';
+        ELSE;
+            content;
+
+        END;
+
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+
+# Wraps up an entire field, with a <div> and displays error messages for the field
+# and any comments.
+# Stash:
+#   field       - current field
+#   comment     - optional comment to display above the field.
+
+
+    BLOCK form_field_wrapper;
+
+        WRAPPER form_field_div + form_field_errors field_list = [ field.name ];
+
+            IF comment;
+                '<div class="comment">';
+                loc( comment );
+                '</div>';
+            END;
+
+            content;
+        END;
+    END;
+
+
+
+#----------------------------------------------------------------------------%][%
+
+# Wrap content in a div for the given field.
+# messages next to the field
+# Stash:
+#   field       - current field
+
+
+    BLOCK form_field_div;
+        %]
+        <div class="[% field.type %] [% field.style %] [% field.required_text %]">
+            [% content %]
+        </div>
+        [%
+    END;
+
+#----------------------------------------------------------------------------%][%
+# Block to do the "Multiple" magic
+# Looks at "form_checkbox_limit" stash to see if should
+# show a checkbox or a multiple option list
+
+    BLOCK multiple_select_field;
+
+        DEFAULT form_checkbox_limit = 12;
+
+        IF !field.options;
+            loc('* No selection available *');
+
+        ELSIF field.options.size <= form_checkbox_limit;
+
+            IF show_label;
+               '<fieldset>';
+                form_legend( label );
+            END;
+
+            html_element_checkbox_group( field );
+            '</fieldset>' IF show_label;
+
+        ELSE;
+            form_field_label( field ) IF show_label;
+
+            # Multiple select options, no heading, five tall, multiple
+            html_element_select( field, 0, 5, 'mult' );
+        END;
+    END;
+
+#----------------------------------------------------------------------------%][%
+# BLOCK to do the "Select" magic
+# Looks at "form_options_limit" stash to see if should
+# show a radio or an option list
+
+    BLOCK single_select_field;
+
+       DEFAULT form_options_limit = 10;
+
+        IF !field.options;
+            loc('* No selection available *');
+
+        ELSIF field.options.size <= form_options_limit;
+            IF show_label;
+               '<fieldset>';
+                form_legend( label );
+            END;
+
+            html_element_radio( field );
+
+            '</fieldset>' IF show_label;
+
+
+        ELSE;
+            # Drop down widget with "Select Foo" heading
+            form_field_label( field ) IF show_label;
+            html_element_select( field, 'with heading' );
+        END;
+    END;
+
+
+
+#----------------------------------------------------------------------------%][%
+# Macro to generate a generic HTML element.
+# Pass in:
+#   field       - field to display (field object or field name)
+#   show_label  - if true then will include field.label in display
+
+
+
+    MACRO form_field_element( field, show_label ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        # First deal with specific field type
+
+        SWITCH field.type;
+
+            CASE 'Multiple';
+                PROCESS multiple_select_field;
+
+
+            CASE 'Select';
+                PROCESS single_select_field;
+
+
+
+            CASE 'Boolean';
+                IF show_label;
+                    '<fieldset>';
+                    form_legend( label );
+                END;
+                 html_element_yes_no( field );
+
+                 '</fieldset>' IF show_label;
+
+
+
+            CASE [ 'TextArea', 'HtmlArea', 'Template' ];
+                form_field_label( field ) IF show_label;
+                html_element_textarea( field );
+
+
+            CASE 'Checkbox';
+                CALL field.style('rcheck') IF show_label;
+                html_element_input( field );
+                form_field_label( field ) IF show_label;
+
+
+
+            # Some custom fields
+
+            CASE 'OneToTen';
+                PROCESS one_to_ten;
+
+
+            CASE 'DateTimeDMYHM';
+                IF show_label;
+                    '<label>'; loc( field.label ) | html; ': </label>';
+                END;
+                html_element_DateTimeDMYHM( field );
+
+
+
+            CASE 'DateTimeDMYHM2';
+                IF show_label;
+                    '<label>'; loc( field.label ) | html; ': </label>';
+                END;
+                html_element_DateTimeDMYHM2( field );
+
+
+
+            # <input>
+
+            CASE;
+                form_field_label( field ) IF show_label;
+                SWITCH field.widget;
+                    CASE 'select';
+                        html_element_select( field );
+
+                    CASE;
+                        html_element_input( field );
+                END;
+
+        END;  # Switch
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+#------------------- Basic HTML widgets ------------------------------------
+
+    MACRO field_attributes( field_type, id_suffix, name_suffix ) BLOCK;
+
+        SET field_id = field.id | uri | html;
+        SET field_id = field_id _ id_suffix IF id_suffix;
+
+        SET field_name = field.full_name | uri | html;
+        SET field_name = field_name _ name_suffix IF name_suffix;
+
+
+        " id='$field_id' name='$field_name'";
+        " type='$field_type'"  IF field_type;
+        ' readonly="readonly"' IF field.readonly;
+        ' disabled="disabled"' IF field.disabled;
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+# Generic <input> widget
+
+    MACRO html_element_input( field, input_field_type ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        DEFAULT input_field_type = field.widget;
+
+
+        '<input';
+        field_attributes( input_field_type );
+        '/>';
+
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+# Radio input with labels to right
+# If field is not required then an empty "none" option is include at the top.
+
+    MACRO html_element_radio( field ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        CALL field.style('rradio');
+        %]
+
+        [% UNLESS field.required %]
+            <input[% field_attributes( 'radio', 'none' ) %] checked="checked" value="" />
+            [% form_field_label( field, 'none', 'none' ) %]
+            <br />
+        [% END %]
+
+        [%
+        cnt = 0;
+        FOR i = as_list(field.options); cnt = cnt + 1; %]
+
+            <input [% field_attributes( 'radio', cnt ) %] value="[% i.value %]"  />
+            [% form_field_label( field, i.label, cnt ) %]
+            <br />
+        [% END %]
+    [% END;
+
+#----------------------------------------------------------------------------%][%
+# Drop down <select>
+# Parameters:
+#   field       - field object
+#   add_heading - if true adds "Select Foo" to the top of the list
+#   size        - if set sets the size of the select list
+#   multiple    - if true sets the multiple flag
+#
+
+
+    MACRO html_element_select( field, add_heading, size, multiple ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        %]
+        <select [% field_attributes; " size='$size'" IF size %] >
+        [%- IF add_heading %]
+            <option value="">[% loc('Select') %] [% loc(label) | html %]</option>
+            <option value="-">------------</option>
+        [% END %]
+
+        [% FOR i = as_list( field.options ) -%]
+            <option value="[% i.value %]">[% loc(i.label) | html %]</option>
+        [% END;
+
+        "</select>\n";
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+# Generates a checkbox group
+
+    MACRO html_element_checkbox_group( field ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        CALL field.style('rcheck');  # Label is on the right
+
+
+        FOR i = as_list(field.options) %]
+            <input [% field_attributes( 'checkbox', i.value ) %] value="[% i.value %]" />
+            [% form_field_label( field, i.label, i.value ) %]
+            <br />
+        [% END %]
+
+    [% END;
+
+#----------------------------------------------------------------------------%][%
+# <textarea> widget
+
+
+    MACRO html_element_textarea( field ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        CALL field.style('textarea');  # To style differently.
+        %]
+        <br />
+        <textarea rows="10" cols="50" [% field_attributes %]></textarea>
+    [% END;
+
+
+#----------------------------------------------------------------------------%][%
+# Custom "elements" for special fields
+#----------------------------------------------------------------------------%][%
+
+# Yes/No widgets
+
+
+
+    MACRO html_element_yes_no( field ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        CALL field.style('rinline');  # label on right
+
+        %]
+        <input [% field_attributes( 'radio', 'yes' ) %] value="1" />
+        [% form_field_label( field, 'Yes', 'yes' ) %]
+
+        <input [% field_attributes( 'radio', 'no' ) %] value="0" />
+        [% form_field_label( field, 'No', 'no' ) %]
+        [%
+    END;
+
+#----------------------------------------------------------------------------%][%
+# Compound field for Date/Time
+# This is using a nested form for individual fields
+# This isn't suppose to work perfectly, so no complaints.
+
+    MACRO html_element_DateTimeDMYHM2( field ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+
+        SET f = field.sub_form;
+
+        html_element_select( f.field( 'month' ) );
+        ' ';
+        html_element_select( f.field( 'day' ) );
+        ', ';
+        html_element_select( f.field( 'year' ) );
+        ' --  ';
+        html_element_select( f.field( 'hour' ) );
+        ':';
+        html_element_select( f.field( 'minute' ) );
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+# Compound field for Date/Time
+# This isn't suppose to work perfectly, so no complaints.
+
+
+    MACRO html_element_DateTimeDMYHM( field ) BLOCK;
+
+        # Allow passing a field name or a field object;
+        SET field = form.field( field ) UNLESS field.name;
+        %]
+
+
+        <input [% field_attributes( 'text', ".day", ".day" ) %] />
+        /
+        <input [% field_attributes( 'text', ".month", ".month" ) %] />
+        /
+        <input [% field_attributes( 'text', ".year", ".year" ) %] />
+        (d/m/y)
+
+        <input [% field_attributes( 'text', ".hour", ".hour" ) %] />
+        :
+        <input [% field_attributes( 'text', ".minute", ".minute" ) %] />
+        (h:m)
+
+
+    [% END;
+
+#----------------------------------------------------------------------------%][%
+#
+#  Utility Macros
+#
+#----------------------------------------------------------------------------%][%
+
+# Generate a label for a field.
+# Pass:
+#   field       - field object or field name (in "form")
+#   field_label - optional field label
+#   id_suffix   - text to add to end of field id.  Used for multiple lists.
+#
+# Will set the field's label if field_label is passed in.
+
+
+    MACRO form_field_label( field, field_label, id_suffix ) BLOCK;
+
+        SET field = form.field( field ) UNLESS field.name;
+
+
+        # Only set the order if id_suffix is not passed in.  id_suffix is used for labling radio/check groups.
+        UNLESS id_suffix.defined;
+            CALL field.set_order;  # Set the order of the field on the page.
+
+            # This is for when calling this macro directly instead of via form() macro.
+            CALL field.label( field_label ) IF field_label;
+        END;
+
+        DEFAULT field_label = field.label;
+
+
+        '<label for="';
+        field.id | uri | html;
+        id_suffix | url | html;
+
+        '" class="break' IF break_label;
+
+        '">';
+        IF no_escape_label;
+            field_label;
+        ELSE;
+            loc(field_label) | html;
+        END;
+        '</label>'; "\n";
+
+        '<br />' IF break_label;
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+
+# Generate a legend for the passed in text.
+# The text is localized and html-escaped.
+# Stash
+#   no_escape_html -- don't localize or html-escape
+
+    MACRO form_legend( text ) BLOCK;
+        IF text;
+            '<legend>';
+            IF no_escape_label;
+                text;
+            ELSE;
+                loc(text) | html;
+            END;
+            '</legend>';
+        END;
+    END;
+
+
+#----------------------------------------------------------------------------%][%
+# Case of a select when there are no options available
+# TODO -- this should throw an exception if the field is required.
+
+
+    BLOCK no_options;
+        '<label>';
+        label | html;
+        '</label>'; loc('* No selection available *'); '<br />';
+    END;
+
+
+
+#----------------------------------------------------------------------------%][%
+#   Special / Custom Fields
+#----------------------------------------------------------------------------%][%
+
+# One-to-Ten for evaluations
+
+    BLOCK one_to_ten;
+        CALL field.style('onetoten');  # Override the ltext style
+
+        field_name  = field.name | uri | html;
+        field_id    = field.id | uri | html;
+
+        '<label>'; label | html; '</label>';
+
+        '<table><tbody><tr>';
+
+        '<td>'; loc( 'Poor' ); '</td>';
+
+        FOR i = [1..10];
+            myid = field_id _ '_' _ i;
+            '<td><input';
+            field_attributes( 'radio', i );
+            " value='$i' /><br />";
+            form_field_label( field, i, i );
+            '</td>';
+        END;
+
+        '<td>'; loc( 'Excellent' ); '</td></tr></tbody></table>';
+    END;
+
+
+
+#----------------------------------------------------------------------------%][%
+
+
+
+
+
+
+# Generate city, state and zip fields, plus provide lookup web service
+
+    MACRO city_state_zip( prefix ) BLOCK;
+
+        SET prefix = "${prefix}_" IF prefix;
+        SET zip_id = form.field( "${prefix}zip" ).id;
+
+        field('Zip',   "${prefix}zip");
+        field('City',  "${prefix}city" );
+        field('State', "${prefix}state" );
+
+
+        #include_javascript( 'proto/prototype');
+        #include_javascript( 'ZipLookup' );
+
+        #page.script.push( "Event.observe('$zip_id', 'keyup', ZipLookup, false);" );
+
+    END;
+
+
+# Add code required for a pop-up calendar
+
+    BLOCK popup_calendar;
+        # Load javascript if any date fields
+        RETURN UNLESS form && form.fields;
+
+        SET found = 0;
+
+        FOR field = form.fields;
+            NEXT UNLESS field.type == 'DateTime' || field.type == 'FutureDate';
+            found = 1;
+            LAST;
+        END;
+
+        RETURN UNLESS found;
+
+        #include_javascript('CalendarPopup');
+        include_style_sheet('calendar');
+
+        SET hour = c.config.defaults.class_start_hour || 9;
+        SET min  = c.config.defaults.class_start_min || 0;
+        SET cal_format = c.config.defaults.cal_format || 'E, NNN d yyyy h:mm a';
+
+        # Place to show calendar;
+        '<div id="popupcal"></div>';
+
+
+        script = BLOCK;
+        %]
+            var cal = new CalendarPopup('popupcal');
+
+            function my_ReturnFunction(y,m,d) { 
+                if ( !window.CP_targetInput || !window.CP_calendarObject ) return;
+
+                window.CP_calendarObject.copyMonthNamesToWindow();
+
+                var dt = new Date(y,m-1,d,[% hour %],[% min %],0);
+                window.CP_targetInput.value = formatDate(dt, '[% cal_format %]');
+            }
+
+            cal.returnFunction = 'my_ReturnFunction';
+        [%
+        END;
+
+        page.script.push( script );
+    END;
+%]

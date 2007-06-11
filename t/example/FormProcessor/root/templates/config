@@ -1,0 +1,45 @@
+[%
+    page.form_id_count = 0;
+    PROCESS macros;
+
+    page.menu = [
+        [ '/user/edit',     'Simple form' ],
+        [ '/user/byhand',   'By hand' ],
+        [ '/user/date',     'With dates' ],
+        [ '/user/compound', 'Compound fields' ],
+    ];
+
+    # Load the template to generate HTML widgets if a form is found
+    PROCESS form_widgets.tt IF form;
+%]
+
+[% BLOCK macros;
+
+    MACRO start_form( action, method, other ) BLOCK;
+
+
+        method = method && method.match('[Pp][Oo][Ss][Tt]') ? 'post' : 'get';
+
+
+        '<form method="'; method; '"';
+
+        page.form_id_count = page.form_id_count + 1;
+        ' id="form'; page.form_id_count; '"';
+
+        ' action="'; action || c.uri_path; '"';
+        charset = c.res.content_type.1.replace('charset=','');
+        ' accept-charset="'; charset || 'utf-8'; '" class="stdform"';
+        " $other" IF other;
+
+        '>';
+
+    END;
+
+
+    # This macro localizes text base on the current language.
+    MACRO loc( text, args ) BLOCK;
+        c.localize( text, args );  # you would need to create that method
+    END;
+
+
+END; %]

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field';
 
-sub init_widget { 'Textarea' }
+sub init_widget { 'textarea' }
 
 
 our $VERSION = '0.01';

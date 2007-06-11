@@ -1,0 +1,33 @@
+
+<div id="banner">
+    Welcome to Form::Processor application
+</div>
+
+<div id="wrapper">
+
+    <ul id="menu">
+        [% FOR link = page.menu %]
+        <li>
+            <a href="[% c.uri_for( link.0 ) %]"[% ' class="active"' IF link.0.match( c.req.path ) %]>
+                [% link.1 | html %]
+            </a>
+        </li>
+        [% END %]
+    </ul>
+
+    <div id="content">
+        [% IF message %]
+            <h1 id="message">[% message | html %]</h1>
+        [% END %]
+
+        <a href="[% c.uri_for( '/', c.req.path, 'form' ) %]">form source</a> | 
+        <a href="[% c.uri_for( '/', c.req.path, 'template' ) %]">template source</a>
+
+        [% content %]
+    </div>
+
+</div>
+
+<div id="footer">
+    Footer
+</div>

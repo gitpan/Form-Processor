@@ -9,7 +9,7 @@ our $VERSION = '0.02';
 
 my $tidy;
 
-sub init_widget { 'Textarea' }
+sub init_widget { 'textarea' }
 
 sub validate {
     my $field = shift;

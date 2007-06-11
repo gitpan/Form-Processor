@@ -7,7 +7,7 @@ use UNIVERSAL::require;
 use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 
 # Define basic instance interface
@@ -31,6 +31,8 @@ use Rose::Object::MakeMethods::Generic (
         init_object     => {},  # provides a way to init from another object.
         user_data       => {},  # Just a place to store user data.
         language_handle => { interface => 'get_set_init' },  # Locale::Maketext language handle
+        field_counter   => { interface => 'get_set_init' },  # For numbering fields.
+        parent_field    => {}, # Sends all field errors to the parent field
     ],
 
 
@@ -151,7 +153,9 @@ Or when you need a quick, small form do this in a controller:
 
 =head1 DESCRIPTION
 
-[Docs under construction -- editors welcome...]
+[Docs under construction.  The docs are probably, well, less concise then they could be.
+Editors are welcome..]
+
 
 This is a class for working with forms.  A form acts as a layer between your
 internal data representation (such as a database) and the outside world (such
@@ -164,6 +168,7 @@ A form is made up of a collection of fields of possibly different types (e.g.
 Text, Email, Integer, Date), where the fields require validation before being
 accepted into their internal format.  The validation process is really made up of
 a number of steps, where each step can be overridden to customize the process.
+See L<Form::Processor::Field> for methods specific to fields.
 
 Forms are (typically) defined by creating a separate Perl module that includes
 methods for defining the fields that make up the form, plus any special and
@@ -201,7 +206,7 @@ code.
 =head2 Fields
 
 A form's "fields" are really small individual classes and they are often
-subclassed to make more specific classes with additional constraints.  For
+sub-classed to make more specific classes with additional constraints.  For
 example, an Integer field might be a subclass of the basic Text field that
 limits input values to digits.  And a year field might be a subclass of an
 Integer field that limits the range of integer values.
@@ -215,15 +220,15 @@ department number actually exists by doing a database lookup).
 
 Unlike Rose::HTML::Objects, this class does not generate (x)html.  I prefer to
 leave that up to the view (templates).  But there is a plan to add that
-ability via a plugin system for those that want it.  I just find anything to do
+ability via a plug-in system for those that want it.  I just find anything to do
 with HTML is better in the templates where it can be easily tweaked.
 
 A method is provided to generate a hash of current values.  This makes
-populating forms via HTML::FillInForm very easy.  HTML::FillInForm is one of those
-modules that people either love or hate.  I love it because it makes writing HTML
-forms in a very clean way (i.e. no extra code needed to populate the form widgets).
-It also makes it easy to populate forms in a number of different ways in your application,
-which an be handy.
+populating forms via HTML::FillInForm very easy.  HTML::FillInForm is one of
+those modules that people either love or hate.  I love it because HTML forms
+can be written in a very clean and generic way (i.e. no extra code needed to
+populate the form widgets).  It also makes it easy to populate forms in a
+number of different ways in your application, which an be handy.
 
 
 =head2 Compound Fields
@@ -286,19 +291,26 @@ or if an object was updated or created.  See Methods below.
 Each form field is associated with a general type.  The type name
 is used to load a module by that name:
 
-    my $form = {
-        name    => 'Text',
+    my $profile = {
+        required => {
+            title   => 'Text',
+            age     => 'Integer',
+        },
     };
 
-Type "Text" loads the Form::Processor::Field::Text module.  The most basic type
-is "Text" which takes a single scalar value.  A "Select" class is similar, but
-its value must be a valid choice from a list of options.  A "Multiple" type is
-like "Select" but it allows selecting more than one value at a time.
+
+Type "Text" loads the Form::Processor::Field::Text module and likewise, type
+'Integer' loads Form::Processor::Field::Integer.
+
+The most basic type is "Text" which takes a single scalar value.  A "Select"
+class is similar, but its value must be a valid choice from a list of options.
+A "Multiple" type is like "Select" but it allows selecting more than one value
+at a time.
 
 Each field has a "value" method, which is the field's internal value.  This is
 the value your database object would have (e.g. scalar, boolean 0 or 1,
 DateTime object).  A field's internal value is converted to the external value
-by use of the field's format_value method.  This method returns a hash which
+by use of the field's C<format_value()> method.  This method returns a hash which
 allows a single internal value to be made up of multiple fields externally.
 For example, a DateTime object internally might be formatted as a day, month, and
 year externally.
@@ -307,7 +319,7 @@ There's a form method called fif, that generates a hash of all the field's
 external values.  This is quite useful for populating a form using
 HTML::FillInForm.
 
-When data is passed in to validate the form, it is trimmed of leading and trailing 
+When data is passed in to validate the form, it is trimmed of leading and trailing
 whitespace by default and placed in the field's "input" attribute.  Each field has
 a validate method that validates the input data and then moves it to the internal
 representation in the "value" attribute.  Depending on the model, it's this
@@ -315,7 +327,7 @@ internal value that is stored or used by your application.
 
 By default, the validation is simply to copy the data from the "input" to the "value"
 field attribute, but you might have a field that must be converted from a text
-representation to an object (e.g. month, day, year to DateTIme).
+representation to an object (e.g. month, day, year to DateTime).
 
 =head1 METHODS
 
@@ -344,17 +356,80 @@ sub init_name {
 }
 
 
+# Used by set_order call.  See Field.pm
+sub init_field_counter { 1 }
+
 =item profile
 
 Returns the profile as a hashref as shown in the SYNOPSIS.
 This is the one method that you *must* override in your form class.
-This is what describes your form, after all.
+This is what describes your form's fields, after all.
 
 The profile provides a concise and easy way to define the fields in your form.
-Fields can also be added individually to a form, but using a profile is
+Fields can also be added indiviually to a form, but using a profile is
 the recommended and common approach.
 
+Fields typically fall into two major categories: required or optional.
+Therefore, the profile definition is grouped by those categories:
+
+    my $profile => {
+        required => {
+            # required fields
+        },
+        optional => {
+            # optional fields
+        },
+    };
+
+The individual field names are the hash keys, and the field type is the value:
+
+    my $profile = {
+        required => {
+            title   => 'Text',
+            age     => 'Integer',
+        },
+    };
+
+The field type maps directly to a field module, as described above.  The values may
+optionally be a hash:
+
+    my $profile = {
+        required => {
+            age     => {
+                type    => 'Integer',
+            },
+        },
+    };
+
+The only required key is "type".  Any other keys are considered method
+names and will be called on the field once created:
+
+    my $profile = {
+        required => {
+            favorite_color => {
+                type            => 'Select',
+                label_column    => 'color_name',
+                active_column   => 'is_active',
+            },
+        },
+    };
+
+Is basically:
+
+    require Form::Processor::Field::Select;
+    my $field = Form::Processor::Field::Select->new;
+    $field->name( 'favorite_color' );
+    $field->type( 'Select' );
+    $field->form( $form );
+    $field->required( 1 );
+    $field->label_column( 'color_name' );
+    $field->active_column( 'is_active' );
+    $form->add_field( $field );
+
+
+
 =head2 Possible profile keys
+
 
 =over 4
 
@@ -376,6 +451,9 @@ Form::Processor::Field:: and will be require()ed automatically.  For example:
 causes L<Form::Processor::Field::Text> and L<Form::Processor::Field::Multiple>
 to be loaded and calls their new() method.  See L<Form::Processor::Field> for
 more information on the field types.
+
+As mentioned above, the value can optionally be a hash reference instead of a
+scalar.  In this case the hash must contain a "type" key.
 
 Each of these fields have their "required" attribute set true.
 
@@ -602,6 +680,34 @@ sub new {
 
     return $self;
 }
+
+=item load_form
+
+This option is used to load form fields into memory.
+This can be called in a persistent environment such as mod_perl
+or FastCGI to pre-load modules.
+
+This method is not called during normal use of the form.
+
+This simply creates a dummy object and calls the method to load
+form fields via the profile.  Any fields your form dynamically creates
+outside of of the form's C<profile> method are not loaded.  Options are not loaded
+as this may require reading from a data store which may not be available.
+
+=cut
+
+sub load_form {
+    my $class = shift;
+
+    my $self = bless {}, $class;
+
+    $self->SUPER::init(@_);     # load passed in parameters
+
+    $self->build_form;          # create the form fields
+
+    return;
+}
+
 
 
 =item clear
@@ -867,12 +973,23 @@ form, so that circular linkage need to be removed before the form can be removed
 
 =cut
 
-sub DESTROY { shift->clear_fields }
+sub DESTROY { shift->clear_fields; warn "destroy form\n" }
 
 =item make_field
 
+    $field = $form->make_field( $name, $type );
+
 Maps the field type to a field class, and returns the field by calling
 new() on that field class.
+
+The "$name" parameter is the field's name (e.g. first_name, age).
+
+If the second parameter is a scalar it's taken as the field's type
+(e.g. Text, Integer, Multiple).
+
+If the second parameter is a hash reference then the field type is determined
+from the required "type" value (i.e. C<$type->{type}> ).
+
 
 The fields are assumed to be in the Form::Processor::Field name
 space.  If you want to explicitly list the field's package prefix it
@@ -888,7 +1005,14 @@ with a plus sign:
 =cut
 
 sub make_field {
-    my ( $self, $name, $type ) = @_;
+    my ( $self, $name, $type_data ) = @_;
+
+    croak 'Must pass name and type to make_field'
+        unless $name && $type_data;
+
+    my $type = ref $type_data eq 'HASH'
+        ? delete $type_data->{type}
+        : $type_data;
 
     $type = $self->guess_field_type( $name ) if $type eq 'Auto';
 
@@ -906,7 +1030,21 @@ sub make_field {
         ? $self->name_prefix . '.' . $name
         : $name;
 
-    return $class->new( name => $field_name, type => $type, form => $self );
+    my $field = $class->new( name => $field_name, type => $type, form => $self );
+
+
+    # Default field order:
+    my $fields = $self->fields;
+    $field->order( $fields ? scalar @{ $self->fields } + 1 : 1 );
+
+    # Call methods on field
+    if ( ref $type_data eq 'HASH' ) {
+        $field->$_( $type_data->{$_} ) for keys %{ $type_data };
+    }
+
+
+    return $field;
+
 }
 
 
@@ -1033,6 +1171,24 @@ sub fif {
     }
     return \%hash;
 }
+
+=item sorted_fields
+
+Calls fields and returns them in sorted order by their "order"
+value.
+
+
+=cut
+
+sub sorted_fields {
+    my $form = shift;
+
+    my @fields = sort { $a->order <=> $b->order } $form->fields;
+
+    return wantarray ? @fields : \@fields;
+}
+
+
 
 =item field NAME
 
@@ -1169,21 +1325,23 @@ sub validate {
 
     # First pass: trim values and move to "input" slot
 
-    $_->input( $_->trim_value( $params->{ $_->name } ) )
+    $_->input( $_->trim_value( $params->{ $_->full_name } ) )
             for $self->fields;
 
 
 
     # Second pass: Validate each field and "inflate" input -> value.
 
-    $_->validate_field for $self->fields;
+    for my $field ( $self->fields ) {
+        next if $field->clear;  # Skip validation
+        $field->validate_field;
+    }
 
 
-
-    # Third pass: call local validation for all defined values.
-    # Note that the local validation is only called on defiend fields.
+    # Third pass: call local validation for all *defined* values.
 
     for my $field ( $self->fields ) {
+        next if $field->clear;  # Skip validation
         next unless defined $field->value;
 
         # these methods have access to the inflated values
@@ -1324,7 +1482,7 @@ Returns list of field with errors.
 
 =cut
 
-sub error_fields { return grep { $_->errors } shift->fields }
+sub error_fields { return grep { $_->errors } shift->sorted_fields }
 
 =item error_field_name
 

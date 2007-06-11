@@ -6,6 +6,8 @@ use base 'Form::Processor::Field::Text';
 
 our $VERSION = '0.01';
 
+sub init_widget { 'password' }
+
 sub init {
     my $self = shift;
     $self->SUPER::init(@_);

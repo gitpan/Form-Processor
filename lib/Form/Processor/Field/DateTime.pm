@@ -13,7 +13,8 @@ Form::Processor::Field::DateTime
 
 This is a module that allows mapping the DateTime field to
 the actual field used.  Makes it easier to remap all the forms
-in an application to a new field type by overriding.
+in an application to a new field type by overriding instead of
+editing all the forms.
 
 =cut
 

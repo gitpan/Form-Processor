@@ -12,7 +12,7 @@ our $VERSION = '0.01';
 
 # override completely validate
 
-sub validate {
+sub validate_field {
     my ( $self ) = @_;
 
     my $params = $self->form->params;
@@ -49,7 +49,10 @@ sub validate {
     eval {  $dt = DateTime->new( %date, time_zone => 'floating' ) };
 
     if ( $@ ) {
-        $self->add_error( "Invalid date ([_1])", "$@" );
+        my $error = $@;
+        $error =~ s! at .+$/!!;
+        # probably don't want to use that error message directly
+        $self->add_error( "Invalid date ([_1])", "$error" );
         return;
     }
 
@@ -71,7 +74,7 @@ sub format_value {
 
     for my $sub ( qw/ month day year hour minute / ) {
 
-        $hash{ $name . '.' . $sub } = $dt->$sub;
+        $hash{ $name . '.' . $sub } = sprintf( '%02d', $dt->$sub );
     }
 
     return %hash;

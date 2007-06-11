@@ -18,7 +18,7 @@ For use in surveys using ten radio selects.
 =cut
 
 
-sub init_widget { 'Radio' }
+sub init_widget { 'radio' }
 
 sub validate {
     my $self = shift;

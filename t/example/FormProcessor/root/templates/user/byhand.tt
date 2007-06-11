@@ -1,0 +1,38 @@
+[%
+    # Form to edit a user
+
+    page.title = 'Edit a User';
+
+    '<p>This shows a bit more hand-customization.  Lower level template macros
+    are used so that custom placement of fields is possible.  A custom &lt;div&gt;
+    is used so formatting for the First and Last fields will look different.</p>';
+
+
+    WRAPPER form_wrapper;
+        PROCESS user_data;
+    END;
+%]
+
+[% BLOCK user_data %]
+    <fieldset>
+        <legend>User Data</legend>
+
+<p>This accesses the template macros at a lower level.</p>
+        [%
+            '<div style="padding: 5em">';
+            WRAPPER form_field_errors field_list = [ 'first_name', 'last_name' ];
+                'Please enter your name: ';
+                form_field_label( 'first_name', 'First' ); ': ';
+                form_field_element( 'first_name' );
+                ' -- ';
+                form_field_label( 'last_name', 'Last' ); ': ';
+                form_field_element( 'last_name' );
+            END;
+            '</div>';
+
+            field('Your email', 'email' );
+
+        %]
+    </fieldset>
+[% END %]
+
