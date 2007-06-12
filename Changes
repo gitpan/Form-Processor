@@ -1,5 +1,13 @@
 Revision history for Perl extension Form::Processor.
 
+0.09 Tue Jun 12 05:00:57 UTC 2007
+        Moved Catalyst::Plugin::Form::Processor
+        to separate module.
+        Moved Catalyst demo application to Catalyst Plugin.
+        Weakened form and parent_field to avoid circular references
+        and removed DESTROY method.
+        Devel::Cycle is handy.
+
 0.08 Mon Jun 11 06:14:25 UTC 2007
         Added Hidden and Upload field types.
         Added demo Catalyst application (in t/example)

@@ -12,13 +12,75 @@ use Rose::Object::MakeMethods::Generic (
         reset_options   => { interface => 'reset', hash_key => 'options' },
     ],
     scalar => [
+        multiple        => { interface => 'get_set_init' },
+        size            => { interface => 'get_set_init' },
+
         label_column    => { interface => 'get_set_init' },
         active_column   => { interface => 'get_set_init' },
+        auto_widget_size=> { interface => 'get_set_init' },
         sort_order      => {},
     ],
 );
 
 sub init_widget { 'select' }
+
+=item multiple
+
+If true allows multiple input values
+
+=cut
+
+sub init_multiple { 0 }
+
+=item auto_widget_size
+
+This is a way to provide a hint as to when to automatically
+select the widget to display for fields with a small number of options.
+For example, this can be used to decided to display a radio select for
+select lists smaller than the size specified.
+
+See L<select_widget> below.
+
+=cut
+
+sub init_auto_widget_size { 0 }
+
+=item select_widget
+
+If the widget is 'select' for the field then will look if the field
+also has a L<auto_widget_size>.  If the options list is less than or equal
+to the L<auto_widget_size> then will return C<radio> if L<multiple> is false,
+otherwise will return C<checkbox>.
+
+=cut
+
+sub select_widget {
+    my $field = shift;
+
+    my $size = $field->auto_widget_size;
+
+    return $field->widget unless $field->widget eq 'select' && $size;
+
+    my $options = $field->options || [];
+
+    return 'select' if @$options > $size;
+
+    return $field->multiple ? 'checkbox' : 'radio';
+}
+
+
+
+=item size
+
+This can be used to store how many items should be offered in the UI
+at a given time.
+
+Defaults to 0.
+
+=cut
+
+sub init_size { 0 }
+
 
 =item label_column
 

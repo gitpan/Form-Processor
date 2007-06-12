@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use base 'Rose::Object';
 use Form::Processor::I18N;  # only needed if running without a form object.
+use Scalar::Util;
 
 
 our $VERSION = '0.01';
@@ -18,7 +19,7 @@ use Rose::Object::MakeMethods::Generic (
         'type',         # field type (e.g. 'Text', 'Select' ... )
         'label',        # Text label -- not really used much, yet.
         'style',        # Field's generic style to use for css formatting
-        'form',         # The parent form
+        #'form',         # The parent form (defined below)
         'sub_form',     # The field is made up of a sub-form.
         # This is a more generic field type that can be used
         # in template to determine what type of html widget to generate
@@ -51,6 +52,7 @@ use Rose::Object::MakeMethods::Generic (
         add_error_str   => { interface => 'push',  hash_key => 'errors' },
     ],
 );
+
 
 ## Should $value be overridden to only return a value if there are not
 #  any errors?
@@ -119,7 +121,15 @@ sub full_name {
 =item form
 
 This is a reference to the parent form object.
+It's stored weakened references.
 
+=cut
+
+sub form {
+    my $self = shift;
+    return Scalar::Util::weaken( $self->{form} = shift ) if( @_ );
+    return $self->{form};
+}
 =item sub_form
 
 A single field can be represented by more than one sub-fields
@@ -359,10 +369,9 @@ sub required_message { 'This field is required' }
 
 =item test_multiple
 
-Returns false if $self->input is a reference (assuming it's
-an array ref).  Subclasses that allow multiple values should override.
+Returns false if the field is a multiple field
+and the input for the field is a list.
 
-Returns true or false;
 
 =cut
 
@@ -371,7 +380,7 @@ sub test_multiple {
 
     my $value = $self->input;
 
-    if ( ref $value eq 'ARRAY' ) {
+    if ( $self->can('options') &&  !$self->multiple && ref $value eq 'ARRAY' ) {
         $self->add_error('This field does not take multiple values');
         return;
     }

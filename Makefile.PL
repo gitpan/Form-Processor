@@ -17,6 +17,7 @@ WriteMakefile(
         'File::Temp'        =>  0,
         #'HTML::Tidy'        =>  0,  # Requires tidylib
         'Module::Find'      => 0.05,
+        'Scalar::Util'      => 0,
 
         # Maybe remove -- DateManip has bad timezone issues
         'DateTime::Format::DateManip' => '0.04',

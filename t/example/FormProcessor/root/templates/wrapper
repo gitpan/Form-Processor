@@ -1,3 +1,0 @@
-[%
-    content WRAPPER page/html.tt + page/layout.tt;
-%]

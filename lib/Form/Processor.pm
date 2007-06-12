@@ -6,8 +6,9 @@ use Carp;
 use UNIVERSAL::require;
 use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
+use Scalar::Util;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 
 # Define basic instance interface
@@ -32,7 +33,7 @@ use Rose::Object::MakeMethods::Generic (
         user_data       => {},  # Just a place to store user data.
         language_handle => { interface => 'get_set_init' },  # Locale::Maketext language handle
         field_counter   => { interface => 'get_set_init' },  # For numbering fields.
-        parent_field    => {}, # Sends all field errors to the parent field
+        # parent_field    => {}, # Sends all field errors to the parent field
     ],
 
 
@@ -966,14 +967,6 @@ sub _build_fields {
     }
 }
 
-=item DESTROY
-
-A form has a list of fields, but fields also have a reference to the parent
-form, so that circular linkage need to be removed before the form can be removed.
-
-=cut
-
-sub DESTROY { shift->clear_fields; warn "destroy form\n" }
 
 =item make_field
 
@@ -1029,6 +1022,7 @@ sub make_field {
     my $field_name = $self->name_prefix
         ? $self->name_prefix . '.' . $name
         : $name;
+
 
     my $field = $class->new( name => $field_name, type => $type, form => $self );
 
@@ -1567,7 +1561,36 @@ sub uuid {
     return qq[<input type="hidden" name="form_uuid" value="$uuid">];
 }
 
+
+=item parent_field
+
+This value can be used to link a sub-form to the parent field.
+
+One way to create a compound field -- a field that is composed of
+other fields -- is by having the field include a form that is made up of
+fields.  For example, a date field might be made up of a form that includes
+fields for the day, month, and year.
+
+If a form has a parent_field associated with it then any errors will be pushed
+onto the parent_field instead of the current field.  In the date example, an error
+in the year field will cause the error to be assigned to the date field, not directly
+on the year field.
+
+This stores a weakened value.
+
+=cut
+
+sub parent_field {
+    my $self = shift;
+    return Scalar::Util::weaken( $self->{parent_field} = shift ) if ( @_ );
+    return $self->{parent_field};
+}
+
+
+
+
 =back
+
 
 
 =head1 CREATING A MODEL CLASS
