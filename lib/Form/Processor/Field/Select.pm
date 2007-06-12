@@ -22,6 +22,15 @@ use Rose::Object::MakeMethods::Generic (
     ],
 );
 
+=item options
+
+This is an array of hashes for this field.
+Each has must have a label and value keys.
+
+=cut
+
+sub init_options { [] };
+
 sub init_widget { 'select' }
 
 =item multiple

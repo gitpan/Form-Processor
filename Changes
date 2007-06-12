@@ -1,5 +1,8 @@
 Revision history for Perl extension Form::Processor.
 
+0.10 Tue Jun 12 14:14:50 UTC 2007
+        Fix missing init_options in Select.pm
+
 0.09 Tue Jun 12 05:00:57 UTC 2007
         Moved Catalyst::Plugin::Form::Processor
         to separate module.

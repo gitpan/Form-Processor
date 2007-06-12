@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-my $tests = 7;
+my $tests = 8;
 plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Select';
@@ -15,6 +15,8 @@ my $field = $class->new(
     type    => $name,
     form    => undef,
 );
+
+ok( $field->options, 'Test for init_options failure in 0.09' );
 
 $field->options([
     { value => 1, label => 'one' },

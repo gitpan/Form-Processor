@@ -11,11 +11,19 @@ my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 
+
+# TODO why not just grab $field = $form->field('password') ?
+
+my $form = my_form->new;
+
 my $field = $class->new(
     name    => 'test_field',
     type    => $name,
-    form    => my_form->new,
+    #form    => my_form->new, # this doesn't work but the next line does?
+    form    => $form,  # TODO - something wrong with Field::form()?
 );
+
+
 
 ok( defined $field,  'new() called' );
 
