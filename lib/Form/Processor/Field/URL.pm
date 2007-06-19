@@ -8,14 +8,14 @@ our $VERSION = '0.01';
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
+
     my $url = $self->input;
 
-    unless ( $url =~ m!^\w+://[^/\s]+/\S*$! ) {
-        $self->add_error('Enter a plain url "e.g. http://google.com/"');
-        return;
-    }
+    return $self->add_error('Enter a plain url "e.g. http://google.com/"')
+        unless $url =~ m{^\w+://[^/\s]+/\S*$}; 
 
-    return $self->SUPER::validate;
+    return 1;
 
 
 }

@@ -22,14 +22,15 @@ our $VERSION = '0.02';
 
 sub validate {
     my $field = shift;
-    return unless $field->SUPER::validate(@_);
+
+    return unless $field->SUPER::validate;
 
     my $parser = Template::Parser->new;
 
-    unless ( $parser->parse( $field->value) ) {
-        $field->add_error( 'Template Error: [_1]', $parser->error );
-        return;
-    }
+    return $field->add_error( 'Template Error: [_1]', $parser->error )
+        unless $parser->parse( $field->input );
+
+    return 1;
 
 }
 

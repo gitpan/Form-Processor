@@ -23,13 +23,13 @@ sub init_widget { 'radio' }
 sub validate {
     my $self = shift;
 
+    # Test basic input, and copy to value
     return unless $self->SUPER::validate;
 
-    my $value = $self->value;
-    if ( $value < 1 || $value > 10 ) {
-        $self->add_error('Please select a value from 1 to 10');
-        return;
-    }
+    my $value = $self->input || return 1;
+
+    return $self->add_error('Please select a value from 1 to 10')
+        if $value < 1 || $value > 10;
 
     return 1;
 

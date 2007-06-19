@@ -48,6 +48,8 @@ sub init {
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
+
     my $form = $self->sub_form;
 
     # First validate the sub fields, passing in the original parameters
@@ -65,9 +67,14 @@ sub validate {
         return;
     }
 
-    $self->value( $dt );
+    $self->temp( $dt );
 
     return 1;
+}
+
+sub input_to_value {
+    my $field = shift;
+    $field->value( $field->temp );
 }
 
 sub format_value {

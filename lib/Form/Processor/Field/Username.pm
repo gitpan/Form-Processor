@@ -9,20 +9,17 @@ our $VERSION = '0.01';
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
+
     my $input = $self->input || '';
 
-    if ( $input =~ /\s/ ) {
-        $self->add_error('Usernames must not contain spaces');
-        return;
-    }
+    return $self->add_error('Usernames must not contain spaces')
+        if $input =~ /\s/;
 
-    if ( length $input < 4 ) {
-        $self->add_error('Usernames must be at least 4 characters long');
-        return;
-    }
+    return $self->add_error('Usernames must be at least 4 characters long')
+        if length $input < 4;
 
-
-    return $self->SUPER::validate;
+    return 1;
 }
 
 

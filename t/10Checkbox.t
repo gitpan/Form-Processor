@@ -20,24 +20,24 @@ ok( defined $field,  'new() called' );
 $field->input( 1 );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 1' );
-is( $field->value, 1, 'Test true == 1' );
+is( $field->value, 1, 'input 1 is 1' );
 
 $field->input( 0 );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 2' );
-is( $field->value, 0, 'Test true == 0' );
+is( $field->value, 0, 'input 0 is 0' );
 
 
 $field->input( 'checked' );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 3' );
-is( $field->value, 1, 'Test true == 1' );
+is( $field->value, 1, 'input checked is 1' );
 
 
 $field->input( undef );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 4' );
-is( $field->value, 0, 'Test true == 0' );
+is( $field->value, 0, 'input undef is 0' );
 
 
 

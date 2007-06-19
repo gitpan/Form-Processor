@@ -6,9 +6,12 @@ use base 'Form::Processor::Field::Text';
 
 our $VERSION = '0.01';
 
+sub init_size { 4 }
+
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
 
     # remove plus sign.
     my $value = $self->input;
@@ -16,12 +19,11 @@ sub validate {
         $self->input( $value );
     }
 
-    unless ( $self->input =~ /^-?\d+$/ ) {
-        $self->add_error('Value must be a positive or negative integer');
-        return;
-    }
+    return $self->add_error('Value must be a positive or negative integer')
+        unless $self->input =~ /^-?\d+$/;
 
-    return $self->SUPER::validate;
+    return 1;
+
 }
 
 

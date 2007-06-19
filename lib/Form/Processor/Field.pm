@@ -16,6 +16,7 @@ use Rose::Object::MakeMethods::Generic (
                         # not to be confused with the form method init_value().
         'value',        # scalar internal value -- same as init_value at start.
         'input',        # input value from parameter
+        'temp',         # Temporary storage for fields to save validated data
         'type',         # field type (e.g. 'Text', 'Select' ... )
         'label',        # Text label -- not really used much, yet.
         'style',        # Field's generic style to use for css formatting
@@ -289,7 +290,15 @@ Then if a value exists:
 
 If all of those pass then the field's validate method is called
 
-    $self->validate;
+    $field->validate;
+
+If C<< $field->validate >> returns true then the input value
+is copied from the input attribute to the field's value attribute
+by calling:
+
+    $field->input_to_value;
+
+The default method simply copies the value.
 
 The field's error list and internal value are reset upon entry.
 
@@ -297,41 +306,87 @@ The field's error list and internal value are reset upon entry.
 =cut
 
 sub validate_field {
-    my ($self ) = @_;
+    my $field = shift;
 
 
-    $self->reset_errors;
-    $self->value(undef);
+    $field->reset_errors;
+    $field->value(undef);
 
 
     # See if anything was submitted
-    unless ( $self->any_input ) {
-        $self->add_error( $self->required_message )
-            if $self->required;
+    unless ( $field->any_input ) {
+        $field->add_error( $field->required_message )
+            if $field->required;
 
-        return !$self->required;
+        return !$field->required;
     }
 
-    return unless $self->test_multiple;
-    return unless $self->test_options;
+    return unless $field->test_multiple;
+    return unless $field->test_options;
 
-    return $self->validate;
+    return unless $field->validate;
+
+
+    # Now move data from input -> value
+    $field->input_to_value;
 }
 
 =item validate
 
-This method is normally overridden in a field's class.  It does more specific
-test like checking that that the field is of the correct format.
+This method validates the input data for the field and returns true if
+the data validates, false if otherwise.  It's expected that an error
+message is added to the field if the field's input value does not validate.
 
-The default is to copy the input data to the internal value.
+The default method is to return true.
+
+When overriding this method it is best to first call the parent class
+validate method.  This way general to more specific error validation can occur.
+For example in a field class:
+
+    sub validate {
+        my $field = shift;
+        
+        return unless $field->SUPER::validate;
+        
+        my $input = $field->input;
+        #validate $input
+        
+        return $valid_input ? 1 : 0;
+    }
+
+If the validation method produces a final value in the process of validation
+(e.g. creates a DateTime object from a string) then that value can either
+be placed in C<< $field->value >> at that time and will not be copied by
+C<< $field->input_to_value >>, or can place the value in a temporary location
+and then the field can also override the C<input_to_value> method.
+
 
 =cut
 
-sub validate {
+sub validate { 1 }
+
+=item input_to_value
+
+This method is called if C<< $field->validate >> returns true.
+The default method simply copies the input attribute value to the
+value attribute if C<< $field->value >> is undefined.
+
+    $field->value( $field->input )
+        unless defined $field->value;
+
+A field's validation method can populate a field's value during
+validation, or can override this method to populate the value after
+validation has run.  Overriding this method is recommended.
+
+=cut
+
+sub input_to_value {
     my $field = shift;
-    $field->value( $field->input );
-    1;
+
+    $field->value( $field->input )
+        unless defined $field->value;
 }
+
 
 
 =item trim_value

@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Form-Processor
-version:      0.10
+version:      0.11
 version_from: lib/Form/Processor.pm
 installdirs:  site
 requires:
@@ -9,10 +9,12 @@ requires:
     DateTime::Format::DateManip:   0.04
     Email::Valid:                  0
     File::Temp:                    0
+    HTML::Tidy:                    0
     Locale::Maketext:              1.09
     Module::Find:                  0.05
     Rose::Object:                  0.015
     Scalar::Util:                  0
+    Template:                      0
     Test::More:                    0
     UNIVERSAL::require:            0
 

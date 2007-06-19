@@ -62,6 +62,7 @@ t/10Phone.t
 t/10PosInteger.t
 t/10Select.t
 t/10Template.t
+t/10Text.t
 t/10URL.t
 t/10Username.t
 t/10USPhone.t

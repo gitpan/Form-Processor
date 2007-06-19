@@ -9,6 +9,7 @@ our $VERSION = '0.01';
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
 
     # remove plus sign.
     my $value = $self->input;
@@ -19,14 +20,15 @@ sub validate {
         $self->input( $value );
     }
 
-    unless ( $value =~ /^-?\d+\.?\d*$/ ) {
-        $self->add_error('Value must be a real number');
-        return;
-    }
+    return $self->add_error('Value must be a real number')
+        unless $value =~ /^-?\d+\.?\d*$/;
+
 
     $self->input( sprintf( '%2.2f', $value ) ) if defined $value;
 
-    return $self->SUPER::validate;
+    return 1;
+
+
 }
 
 

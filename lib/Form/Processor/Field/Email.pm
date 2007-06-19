@@ -9,19 +9,17 @@ our $VERSION = '0.01';
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
+
     $self->input( lc $self->{input} );
 
 
-    unless ( Email::Valid->address( $self->input ) ) {
-        $self->add_error('Email should be of the format [_1]', 'someuser@example.com');
-        return;
-    }
+    return $self->add_error('Email should be of the format [_1]', 'someuser@example.com')
+        unless Email::Valid->address( $self->input );
 
 
-    return $self->SUPER::validate;
+    return 1;
 }
-
-
 
 
 1;

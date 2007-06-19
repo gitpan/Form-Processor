@@ -9,6 +9,7 @@ our $VERSION = '0.01';
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
 
     # remove plus sign.
     my $value = $self->input;
@@ -16,15 +17,12 @@ sub validate {
         $self->input( $value );
     }
 
-    unless ( $self->input =~ /^\d+$/ ) {
-        $self->add_error('Value must be a positive integer');
-        return;
-    }
 
-    return unless $self->SUPER::validate;
+    return $self->add_error('Value must be a positive integer')
+        unless $self->input =~ /^\d+$/;
 
+    return 1;
 
-    1;
 }
 
 

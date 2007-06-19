@@ -9,13 +9,12 @@ our $VERSION = '0.01';
 sub validate { 
     my $self = shift;
 
-    unless( $self->input =~ /^(\s*\d{5}(?:[-]\d{4})?\s*)$/ ) {
-        $self->add_error('US Zip code must be 5 or 9 digits');
-        return;
-    }
+    return unless $self->SUPER::validate;
 
-    return $self->SUPER::validate;
+    return $self->add_error('US Zip code must be 5 or 9 digits')
+        unless $self->input =~ /^(\s*\d{5}(?:[-]\d{4})?\s*)$/;
 
+    return 1;
 }
 
 

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-my $tests = 10;
+my $tests = 11;
 plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Password';
@@ -55,11 +55,11 @@ $field->input( 'my4username' );
 $field->validate_field;
 ok( $field->has_error, 'matches username' );
 
-
-$field->input( 'my4user5name' );
+my $pass = 'my4user5name';
+$field->input( $pass );
 $field->validate_field;
 ok( !$field->has_error, 'just right' );
-
+is ( $field->value, $pass, 'Input and value match' );
 
 
 package my_form;

@@ -17,6 +17,8 @@ sub init {
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
+
     my $value = $self->input;
 
     return $self->add_error( 'Passwords must not contain spaces' )
@@ -52,8 +54,9 @@ sub validate {
         if $params->{$_} && $params->{$_} eq $value;
     }
 
+    return 1;
 
-    return $self->SUPER::validate;
+
 }
 
 sub required_message { 'Please enter a password in this field' }

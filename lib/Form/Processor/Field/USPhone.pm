@@ -9,17 +9,16 @@ our $VERSION = '0.01';
 sub validate {
     my $self = shift;
 
+    return unless $self->SUPER::validate;
+
     my $input = $self->input;
 
     $input =~ s/\D//g;
 
-    unless ( length $input == 10 ) {
-        $self->add_error('Phone Number must be 10 digits, including area code');
-        return;
-    }
+    return $self->add_error('Phone Number must be 10 digits, including area code')
+        unless length $input == 10;
 
-    return $self->SUPER::validate;
-
+    return 1;
 }
 
 

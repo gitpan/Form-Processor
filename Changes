@@ -1,5 +1,14 @@
 Revision history for Perl extension Form::Processor.
 
+0.11 Mon Jun 18 19:10:13 UTC 2007
+        Uncommented dependencies on Html::Tidy and Template Toolkit.
+        The tests checks that all fields compile now so need to include
+        all dependencies and CPAN testers complain when not all tests pass.
+
+        Add size attribute to Text field type, and validate on that size.
+        Also gives a way for markup to add a size to text input fields.
+
+
 0.10 Tue Jun 12 14:14:50 UTC 2007
         Fix missing init_options in Select.pm
 

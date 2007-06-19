@@ -13,16 +13,24 @@ sub init_widget { 'textarea' }
 
 sub validate {
     my $field = shift;
-    return unless $field->SUPER::validate(@_);
+
+    return unless $field->SUPER::validate;
 
     $tidy ||= $field->tidy;
     $tidy->clear_messages;
 
 
     # parse doesn't pass the config file in HTML::Tidy.
-    $tidy->clean( $field->value );
-    $field->add_error( $_->as_string ) for $tidy->messages;
-    return;
+    $tidy->clean( $field->input );
+
+    my $ok = 1;
+
+    for ( $tidy->messages ) {
+        $field->add_error( $_->as_string );
+        $ok = 0;
+    }
+
+    return $ok;
 }
 
 

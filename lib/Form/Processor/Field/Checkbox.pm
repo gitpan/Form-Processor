@@ -7,18 +7,18 @@ our $VERSION = '0.01';
 
 sub init_widget { 'checkbox' }
 
-# Single checkbox 
-sub value {
-    my $self = shift;
+sub input_to_value {
+    my $field = shift;
 
-    my $v = $self->SUPER::value(@_);
-
-    return defined $v && $v ? 1 : 0;
+    $field->value( $field->input ? 1 : 0 );
 }
 
-
-
-
+sub value {
+    my $field = shift;
+    return $field->SUPER::value( @_ ) if @_;
+    my $v = $field->SUPER::value;
+    return defined $v ? $v : 0;
+}
 
 1;
 

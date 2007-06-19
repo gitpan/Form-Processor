@@ -12,6 +12,8 @@ my %date;
 sub validate {
     my ( $self ) = @_;
 
+    return unless $self->SUPER::validate;
+
 
     my $dt = DateTime::Format::DateManip->parse_datetime( $self->input );
 
@@ -29,9 +31,14 @@ sub validate {
 
     # $dt->set_time_zone( 'floating' );
 
-    $self->value( $dt );
+    $self->temp( $dt );
 
-    1;
+    return 1;
+}
+
+sub input_to_value {
+    my $field = shift;
+    $field->value( $field->temp );
 }
 
 sub format_value {
