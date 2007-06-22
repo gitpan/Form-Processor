@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-my $tests = 13;
+my $tests = 21;
 plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Integer';
@@ -47,7 +47,42 @@ is( $field->value, -10, 'Test value == -10' );
 
 $field->input( '-10.123' );
 $field->validate_field;
-ok( $field->has_error, 'Test real number ' );
+ok( $field->has_error, 'Test real number' );
+
+$field->range_start( 10 );
+$field->input( 9 );
+$field->validate_field;
+ok( $field->has_error, 'Test 9 < 10 fails' );
+
+$field->input( 100 );
+$field->validate_field;
+ok( !$field->has_error, 'Test 100 > 10 passes ' );
+
+$field->range_end( 20 );
+$field->input( 100 );
+$field->validate_field;
+ok( $field->has_error, 'Test 10 <= 100 <= 20 fails' );
+
+$field->range_end( 20 );
+$field->input( 15 );
+$field->validate_field;
+ok( !$field->has_error, 'Test 10 <= 15 <= 20 passes' );
+
+$field->input( 10 );
+$field->validate_field;
+ok( !$field->has_error, 'Test 10 <= 10 <= 20 passes' );
+
+$field->input( 20 );
+$field->validate_field;
+ok( !$field->has_error, 'Test 10 <= 20 <= 20 passes' );
+
+$field->input( 21 );
+$field->validate_field;
+ok( $field->has_error, 'Test 10 <= 21 <= 20 fails' );
+
+$field->input( 9 );
+$field->validate_field;
+ok( $field->has_error, 'Test 10 <= 9 <= 20 fails' );
 
 TODO: {
     $field->value( 123.456 );

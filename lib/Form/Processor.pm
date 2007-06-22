@@ -8,7 +8,7 @@ use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 use Scalar::Util;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 
 # Define basic instance interface
@@ -1011,7 +1011,7 @@ sub make_field {
 
     croak "Failed to set field type for field [$name]" unless $type;
 
-    my $class = $type =~ /^\+/
+    my $class = $type =~ s/^\+//
         ? $type
         : 'Form::Processor::Field::' . $type;
 

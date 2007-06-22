@@ -3,14 +3,11 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field::Select';
 
-use Rose::Object::MakeMethods::Generic (
-    scalar => [
-        range_start  => { interface => 'get_set_init' },
-        range_end    => { interface => 'get_set_init' },
-    ],
-);
 
 our $VERSION = '0.01';
+
+sub init_range_start { 1 }
+sub init_range_end { 10 }
 
 sub init_options {
     my $self = shift;

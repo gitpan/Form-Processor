@@ -19,7 +19,7 @@ sub validate {
         $self->input( $value );
     }
 
-    return $self->add_error('Value must be a positive or negative integer')
+    return $self->add_error('Value must be an integer')
         unless $self->input =~ /^-?\d+$/;
 
     return 1;

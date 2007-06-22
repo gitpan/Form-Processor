@@ -26,6 +26,13 @@ use Rose::Object::MakeMethods::Generic (
         # in template to determine what type of html widget to generate
         widget      =>  { interface => 'get_set_init' },
         order       =>  { interface => 'get_set_init' },
+        required_message => { interface => 'get_set_init' },
+
+        # Allow ragne checks -- done after validation so
+        # must only be used on appropriate fields
+        range_start  => { interface => 'get_set_init' },
+        range_end    => { interface => 'get_set_init' },
+
     ],
 
     boolean => [
@@ -270,7 +277,40 @@ sub add_error {
 
 }
 
+=item start_range
+=item end_range
 
+Fields can have a start range and an end range.
+The IntRange field, for example will use this range
+to create a select list with a range of integers.
+
+If one or both of start_range and end_range are set
+and the field does not have an options list, the field's
+input value will be tested to be within the range (or
+equal to or above/below if only one is set) by numerical
+comparison.
+
+For example, in a profile:
+
+    age => {
+        type            => 'Integer',
+        range_start     => 18,
+        range_end       => 120,
+    }
+
+Will test that any age entered will be in the range of
+of 18 to 120, inclusive.  Open ended can be done by simply:
+
+
+    age => {
+        type            => 'Integer',
+        range_start     => 18,
+    }
+
+=cut
+
+sub init_range_start { return }
+sub init_range_end { return }
 
 =item reest_errors
 
@@ -323,8 +363,8 @@ sub validate_field {
 
     return unless $field->test_multiple;
     return unless $field->test_options;
-
     return unless $field->validate;
+    return unless $field->test_ranges;
 
 
     # Now move data from input -> value
@@ -387,6 +427,48 @@ sub input_to_value {
         unless defined $field->value;
 }
 
+=item test_ranges
+
+If range_start and/or range_end is set AND the field
+does not have options will test that the value is within
+range.  This is called after all other validation.
+
+=cut
+
+sub test_ranges {
+    my $field = shift;
+    return 1 if $field->can('options') || $field->has_error;
+
+    my $input = $field->input;
+
+
+    return 1 unless defined $input;
+
+    my $low     = $field->range_start;
+    my $high    = $field->range_end;
+
+    if ( defined $low && defined $high ) {
+        return $input >= $low && $input <= $high
+            ? 1
+            : $field->add_error( 'valume must be between [_1] and [_2]', $low, $high );
+    }
+
+    if ( defined $low ) {
+        return $input >= $low
+            ? 1
+            : $field->add_error( 'valume must be greater than or equal to [_1]', $low );
+    }
+
+    if ( defined $high ) {
+        return $input <= $high
+            ? 1
+            : $field->add_error( 'valume must be less than or equal to [_1]', $high );
+    }
+
+    return 1;
+}
+
+
 
 
 =item trim_value
@@ -417,10 +499,11 @@ sub trim_value {
 =item required_message
 
 Returns text for use in "required" message.
+The default is "This field is required".
 
 =cut
 
-sub required_message { 'This field is required' }
+sub init_required_message {  'This field is required' }
 
 =item test_multiple
 

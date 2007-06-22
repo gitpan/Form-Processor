@@ -2,6 +2,8 @@ package Form::Processor::Field::Text;
 use strict;
 use warnings;
 use base 'Form::Processor::Field';
+our $VERSION = '0.02';
+
 
 use Rose::Object::MakeMethods::Generic (
     scalar => [

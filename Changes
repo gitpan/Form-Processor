@@ -1,5 +1,14 @@
 Revision history for Perl extension Form::Processor.
 
+0.12 Fri Jun 22 03:27:33 UTC 2007
+        Fixed problem with loading fields prefixed with a plus sign.
+
+        Forced checkboxes to value="1" in form_widgets.tt since
+        HTML::FillInForm uses value="on".
+
+        Added range_start and range_end to base class
+        (was only in IntRange before).
+
 0.11 Mon Jun 18 19:10:13 UTC 2007
         Uncommented dependencies on Html::Tidy and Template Toolkit.
         The tests checks that all fields compile now so need to include

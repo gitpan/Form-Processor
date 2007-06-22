@@ -1,7 +1,7 @@
 package Form::Processor::Field::PosInteger;
 use strict;
 use warnings;
-use base 'Form::Processor::Field::Text';
+use base 'Form::Processor::Field::Integer';
 
 
 our $VERSION = '0.01';
@@ -19,7 +19,7 @@ sub validate {
 
 
     return $self->add_error('Value must be a positive integer')
-        unless $self->input =~ /^\d+$/;
+        unless $self->input >= 0;
 
     return 1;
 

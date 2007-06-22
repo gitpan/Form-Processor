@@ -13,7 +13,7 @@ WriteMakefile(
         'DateTime',         =>  0.34,
         'Email::Valid'      =>  0,
         'Test::More'        =>  0,
-        'Template'          => 0,   # Validate templates?
+        'Template'          =>  '2.19',   # Validate templates?
         'File::Temp'        =>  0,
         'HTML::Tidy'        =>  0,  # Requires tidylib
         'Module::Find'      => 0.05,
