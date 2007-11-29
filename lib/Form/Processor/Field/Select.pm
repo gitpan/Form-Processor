@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field';
 
-our $VERSION = '0.01';
 
 use Rose::Object::MakeMethods::Generic (
     array => [
@@ -22,7 +21,35 @@ use Rose::Object::MakeMethods::Generic (
     ],
 );
 
-=item options
+=head1 NAME
+
+Form::Processor::Field::Select
+
+=head1 SYNOPSIS
+
+See L<Form::Processor>
+
+=head1 DESCRIPTION
+
+This is a field that includes a list of possible valid options.
+This can be used for select and mulitple-select fields.
+
+=head2 Widget
+
+Fields can be given a widget type that is used as a hint for
+the code that renders the field.
+
+This field's widget type is: "select".
+
+=head2 Subclass
+
+Fields may inherit from other fields.  This field
+inherits from: "Field"
+
+=head1 METHODS
+
+
+=head2 options
 
 This is an array of hashes for this field.
 Each has must have a label and value keys.
@@ -33,7 +60,7 @@ sub init_options { [] };
 
 sub init_widget { 'select' }
 
-=item multiple
+=head2 multiple
 
 If true allows multiple input values
 
@@ -41,7 +68,7 @@ If true allows multiple input values
 
 sub init_multiple { 0 }
 
-=item auto_widget_size
+=head2 auto_widget_size
 
 This is a way to provide a hint as to when to automatically
 select the widget to display for fields with a small number of options.
@@ -54,7 +81,7 @@ See L<select_widget> below.
 
 sub init_auto_widget_size { 0 }
 
-=item select_widget
+=head2 select_widget
 
 If the widget is 'select' for the field then will look if the field
 also has a L<auto_widget_size>.  If the options list is less than or equal
@@ -79,7 +106,7 @@ sub select_widget {
 
 
 
-=item size
+=head2 size
 
 This can be used to store how many items should be offered in the UI
 at a given time.
@@ -91,7 +118,7 @@ Defaults to 0.
 sub init_size { 0 }
 
 
-=item label_column
+=head2 label_column
 
 Sets or returns the name of the method to call on the foreign class
 to fetch the text to use for the select list.
@@ -106,7 +133,7 @@ Defaults to "name"
 sub init_label_column { 'name' }
 
 
-=item active_column
+=head2 active_column
 
 Sets or returns the name of a boolean column that is used as a flag to indicate that
 a row is active or not.  Rows that are not active are ignored.
@@ -125,7 +152,7 @@ updating records that might have data that is now considered inactive.
 sub init_active_column { 'active' }
 
 
-=item sort_order
+=head2 sort_order
 
 Sets or returns the column used in the foreign class for sorting the
 options labels.  Default is undefined.
@@ -141,10 +168,12 @@ the label_column is used as the sort condition.
 
 
 
-=item as_label
+=head2 as_label
 
-Returns the value as the label.
-Does a string compare, although probably always numeric.
+Returns the option label for the option value that matches the field's current value.
+Can be helpful for displaying information about the field in a more friendly format.
+
+This does a string compare, although probably al
 
 =cut
 
@@ -161,5 +190,23 @@ sub as_label {
     return;
 }
 
+
+=head1 AUTHORS
+
+Bill Moseley
+
+=head1 COPYRIGHT
+
+See L<Form::Processor> for copyright.
+
+This library is free software, you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SUPPORT / WARRANTY
+
+L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
+Users are expected to review software for fitness and usability.
+
+=cut
 
 1;

@@ -1,5 +1,24 @@
 Revision history for Perl extension Form::Processor.
 
+0.14 Thu Nov 29 13:50:31 UTC 2007
+    Moved to Module::Install for questionable reasons
+
+    Removed field dependencies to make installation less
+    of a pain for those that do not need all field types.
+
+    Added new fields:
+        WeekdayStr
+        MD5_Password
+        Date_yyy_mm_dd
+        CIDR_List
+
+    A bit more docs for fields.  As with all modules,
+    looking at the source is always a good idea.
+
+0.13 Not released to CPAN
+        Added "min_length" to Text field.
+
+
 0.12 Fri Jun 22 03:27:33 UTC 2007
         Fixed problem with loading fields prefixed with a plus sign.
 

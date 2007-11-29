@@ -16,7 +16,7 @@ use Rose::Object::MakeMethods::Generic (
                         # not to be confused with the form method init_value().
         'value',        # scalar internal value -- same as init_value at start.
         'input',        # input value from parameter
-        'temp',         # Temporary storage for fields to save validated data
+        'temp',         # Temporary storage for fields to save validated data - DEPRECATED -- not really needed.
         'type',         # field type (e.g. 'Text', 'Select' ... )
         'label',        # Text label -- not really used much, yet.
         'style',        # Field's generic style to use for css formatting
@@ -30,28 +30,35 @@ use Rose::Object::MakeMethods::Generic (
 
         # Allow ragne checks -- done after validation so
         # must only be used on appropriate fields
+        # These really should be defined in a subclass that only deals
+        # with numbers.
         range_start  => { interface => 'get_set_init' },
         range_end    => { interface => 'get_set_init' },
+
+        value_format => { interface => 'get_set_init' },  # sprintf format to use when converting input to value
 
     ],
 
     boolean => [
-        'required',
-        'password',
-        'writeonly',    # Don't return this field in params.
-        'clear',        # Don't validate and remove from database.
+        # These should probably be 'get_set' here and then 'get_set_init' any
+        # place that needs to define an initial value.
+        password    => { interface => 'get_set_init' },  # don't return field in $form->fif
+        required    => { interface => 'get_set_init' },  # field is requried
+        writeonly   => { interface => 'get_set_init' },  # don't call format_value on this field
+        clear       => { interface => 'get_set_init' },  # don't validate and remove from database
 
         # disabled and readonly mirror the html form specification
         # disabled fields are not suppose to be "successful" and thus
         # should not be updated.  But.. see "noupdate" below.
-        'disabled',     # Don't update this field in the database.
+        disabled    => { interface => 'get_set_init' }.     # Don't update this field in the database.
+
         # readonly fields are basically like hidden fields that the UI
         # should no be able to modify but still are submitted.
-        'readonly',     # Flag to indicate readonly field
+        readonly    => { interface => 'get_set_init' },     # Flag to indicate readonly field
 
         # Since disabled and readonly effect the UI differently
         # use a separate flag to tell the model to not update a field.
-        'noupdate',     # don't update this field in the database
+        noupdate    => { interface => 'get_set_init' }     # don't update this field in the database
     ],
 
     array => [
@@ -80,7 +87,9 @@ Form::Processor::Field - Base class for Fields used with Form::Processor
 
 This is a base class that allows basic functionality for form fields.
 Form fields inherit from this class and thus may have additional methods.
-See the documentation or source for the individual field.
+See the documentation or source for the individual fields.
+
+Look at the L<validate_field> method for how individual fields are validated.
 
 You are encouraged to create specific fields for your application instead of
 simply using the fields included with Form::Processor.
@@ -90,13 +99,13 @@ simply using the fields included with Form::Processor.
 
 =over 4
 
-=item new
+=item new [parameters]
 
-Creates new field.  Will accept
+Create a new instance of a field.  Any initial values may be passed in
+as a list of parameters.
 
-    name, value, required (and errors)
 
-as parameters.  Only 'name' is required.
+
 
 =cut
 
@@ -104,6 +113,7 @@ sub init {
     my $self = shift;
 
     $self->SUPER::init(@_);
+
     die "Need to supply name parameter"
         unless $self->name;
 }
@@ -175,12 +185,12 @@ The basic types are:
 
     Type        : Example fields
     ------------:-----------------------------------
-    Text        : Text, Integer, Single field dates
-    Checkbox    : Checkbox
-    Radio       : Boolean (yes,no), OneToTen
-    Select      : Select, Multiple
-    Textarea    : HtmlArea
-    Compound    : A field made up of other fields
+    text        : Text, Integer, Single field dates
+    checkbox    : Checkbox
+    radio       : Boolean (yes,no), OneToTen
+    select      : Select, Multiple
+    textarea    : HtmlArea
+    compound    : A field made up of other fields
 
 Note that a Select could be a drop down list or a radio group,
 and that might be determined in the template code based on how
@@ -188,6 +198,8 @@ many select options there are.
 
 Multiple select fields, likewise, might be an option list or
 a group of checkboxes.
+
+The default type is 'text'.
 
 
 
@@ -233,6 +245,10 @@ The "validate" field method must set this value if the field validates.
 
 Sets or returns the required flag on the field
 
+=cut
+
+sub init_required { 0 }
+
 =item errors
 
 returns the error (or list of errors if more than one was set)
@@ -277,14 +293,29 @@ sub add_error {
 
 }
 
-=item start_range
-=item end_range
+=item size
+
+This can be used to specify a max length of a field.
+The Text field type will validate on this value if set.
+Default is zero.
+
+=cut
+
+=item min_length
+
+If set Text-based fields must be this many charactres long to validate.
+Default is zero.
+
+=cut
+
+=item range_start
+=item range_end
 
 Fields can have a start range and an end range.
 The IntRange field, for example will use this range
 to create a select list with a range of integers.
 
-If one or both of start_range and end_range are set
+If one or both of range_start and range_end are set
 and the field does not have an options list, the field's
 input value will be tested to be within the range (or
 equal to or above/below if only one is set) by numerical
@@ -338,16 +369,47 @@ by calling:
 
     $field->input_to_value;
 
-The default method simply copies the value.
+The default method simply copies the value.  This method is only called
+if the field does not have any errors.
 
 The field's error list and internal value are reset upon entry.
+
+Typically, a field may wish to override the following methods:
+
+=over 4
+
+=item validate
+
+This method should validate the input data:
+
+    $input = $field->input
+
+The input data is the raw input provided to the form.
+
+=item input_to_value
+
+This method must copy the input data to the field's value.
+The default method simple does:
+
+    $field->value( $field->input );
+
+A common use in a field would be to convert the input into
+an internal format.  For example, converting a time or date in string
+form to a L<DateTime> object.
+
+=item validate_value
+
+This method is called after converting the input data into the field's
+internal value.  This can be used to validate the value after it's been converted.
+For example, for testing a L<DateTime> object is within a given range of dates.
+
+=back
 
 
 =cut
 
 sub validate_field {
     my $field = shift;
-
 
     $field->reset_errors;
     $field->value(undef);
@@ -369,6 +431,10 @@ sub validate_field {
 
     # Now move data from input -> value
     $field->input_to_value;
+
+    return $field->validate_value unless $field->has_error;
+
+    return;
 }
 
 =item validate
@@ -378,6 +444,8 @@ the data validates, false if otherwise.  It's expected that an error
 message is added to the field if the field's input value does not validate.
 
 The default method is to return true.
+
+The method is passed the field's input value.
 
 When overriding this method it is best to first call the parent class
 validate method.  This way general to more specific error validation can occur.
@@ -405,6 +473,37 @@ and then the field can also override the C<input_to_value> method.
 
 sub validate { 1 }
 
+=item validate_value
+
+This field method is called after the raw field has been validated (with the validate method)
+and placed in the field's value (after calling input_to_value() method).
+
+This method can be overridden in field classes to validate a field after it's been
+converted into its internal form (e.g. a DateTime object).
+
+The default method is to simply return true;
+
+=cut
+
+sub validate_value { 1 }
+
+=item value_format
+
+This is a sprintf format string that is used when moving the field's
+input data to the field's value attribute.  By defult this is undefined,
+but can be set in fields to alter the way the input_to_value() method
+formates input data.
+
+For example in a field that represents money the field could define:
+
+    sub init_value_format { '%.2f' }
+
+And then numberic data will be formatted with two decimal places.
+
+=cut
+
+sub init_value_format { return }
+
 =item input_to_value
 
 This method is called if C<< $field->validate >> returns true.
@@ -423,8 +522,17 @@ validation has run.  Overriding this method is recommended.
 sub input_to_value {
     my $field = shift;
 
-    $field->value( $field->input )
-        unless defined $field->value;
+    return if defined $field->value;  # already set by validate method.
+
+    my $format = $field->value_format;
+
+    if ( $format ) {
+        $field->value( sprintf( $format, $field->input ) );
+    }
+
+    else {
+        $field->value( $field->input );
+    }
 }
 
 =item test_ranges
@@ -620,6 +728,10 @@ flagged as noupdate are skipped when processing by the model.
 This is usesful when a form contains extra fields that are not directly
 written to the data store.
 
+=cut
+
+sub init_noupdate { 0 }
+
 =item disabled
 =item readonly
 
@@ -630,10 +742,19 @@ readonly fileds can be.  Instead of depending on these field attribues, an
 Form::Processor::Model classes should instead use the L<noupdate> flag
 as an indicator if the field should be ignored or not.
 
+=cut
+
+sub init_disabled { 0 }
+sub init_readonly { 0 }
+
 =item clear
 
 This is a flag that says you want to clear the database column for this
 field.  Validation is also not run on this field.
+
+=cut
+
+sub init_clear { 0 }
 
 =item writeonly
 
@@ -651,6 +772,10 @@ field's initial value, but not from the parameter hash passed to the form.
 Redrawn forms (after validation failures) will display the value submitted
 in the form.
 
+=cut
+
+sub init_writeonly { 0 }
+
 
 =item password
 
@@ -659,6 +784,10 @@ field when calling $form->fif.
 
 This is different than the C<writeonly> method above in that the value is
 removed from the hash every time its fetched.
+
+=cut
+
+sub init_password { 0 }
 
 =item value_changed
 

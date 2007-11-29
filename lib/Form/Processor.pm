@@ -8,7 +8,7 @@ use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 use Scalar::Util;
 
-our $VERSION = '0.12';
+our $VERSION = '0.14';
 
 
 # Define basic instance interface
@@ -33,7 +33,11 @@ use Rose::Object::MakeMethods::Generic (
         user_data       => {},  # Just a place to store user data.
         language_handle => { interface => 'get_set_init' },  # Locale::Maketext language handle
         field_counter   => { interface => 'get_set_init' },  # For numbering fields.
-        # parent_field    => {}, # Sends all field errors to the parent field
+
+        # A field can be a form, and this is a reference to that field
+        # Causes all the sub-form error messages to be sent to the parent field.
+        # (implemented below)
+        # parent_field    => {},
     ],
 
 
@@ -733,8 +737,7 @@ sub clear {
 =item init
 
 This is called when the form object is first created.  Parameters are passed
-unchanged from the new() call.  This can be overridden in your form subclass
-if you can think of a reason to do so and are careful not to break everything.
+unchanged from the new() call.
 
 Returning false causes new() to return false.
 
@@ -743,16 +746,20 @@ as a "item" parameter if it's a reference, otherwise it's considered an
 "item_id".
 
 If an "item_id" is passed in (either as a single parameter or as a named
-parameter) the init method will return false if the item method
+parameter) the init method will return false if the init_item method
 returns false.  (Calling the item method when item is undefined automatically
 calls the init_item method.)  The init_item method is typically defined in
 the form's model class and should know how to translate an item_id into
 an item object.  See "init_item" below.
 
 So, the idea is you can pass in an item_id into the constructor
-and have the init_item method validate the item_id.
+and have the init_item method validate the item_id and avoid
+validating the $id in the calling code (e.g. in a controller method).
 
     MyApp::Form->new( $id ) or return 'Invalid id supplied';
+
+Note that if $id is undefined then new() will still return true.  This allows the
+same code to be used for both create and update forms.
 
 
 The init method calls the build_form method which reads the profile and creates
@@ -1003,10 +1010,11 @@ sub make_field {
     croak 'Must pass name and type to make_field'
         unless $name && $type_data;
 
-    my $type = ref $type_data eq 'HASH'
-        ? delete $type_data->{type}
-        : $type_data;
+    $type_data = { type => $type_data } unless ref $type_data eq 'HASH';
 
+    # Grab field type and load the class
+
+    my $type = $type_data->{type} || die 'Failed to provide field type to make_field()';
     $type = $self->guess_field_type( $name ) if $type eq 'Auto';
 
     croak "Failed to set field type for field [$name]" unless $type;
@@ -1015,25 +1023,24 @@ sub make_field {
         ? $type
         : 'Form::Processor::Field::' . $type;
 
-    $class->require or die "Failed to load $class: $UNIVERSAL::require::ERROR";
+    $class->require or die "Failed to load field '$type': $UNIVERSAL::require::ERROR";
 
-    ## eval "require $class";
 
-    my $field_name = $self->name_prefix
+    # Create instance
+
+    $type_data->{name} = $self->name_prefix
         ? $self->name_prefix . '.' . $name
         : $name;
 
+    $type_data->{form} = $self;
 
-    my $field = $class->new( name => $field_name, type => $type, form => $self );
 
+    my $field = $class->new( %{$type_data} );
 
-    # Default field order:
-    my $fields = $self->fields;
-    $field->order( $fields ? scalar @{ $self->fields } + 1 : 1 );
-
-    # Call methods on field
-    if ( ref $type_data eq 'HASH' ) {
-        $field->$_( $type_data->{$_} ) for keys %{ $type_data };
+    # Define default field order
+    unless ( $field->order ) {
+        my $fields = $self->fields;
+        $field->order( $fields ? scalar @{ $self->fields } + 1 : 1 );
     }
 
 
@@ -1630,10 +1637,18 @@ with overriding Form::Processor with the Model class.
 
 Bill Moseley - with *much* help from John Siracusa
 
-=head1 LICENSE
+=head1 COPYRIGHT
+
+L<Form::Processor> is Copyright (c) 2006-2007 Bill Moseley.  All rightes
+reserved.
 
 This library is free software, you can redistribute it and/or modify it under
 the same terms as Perl itself.
+
+=head1 SUPPORT / WARRANTY
+
+L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
+Users are expected to review software for fitness and usability.
 
 =cut
 

@@ -6,7 +6,7 @@ plan tests => 10;
 
 SKIP:
 {
-    eval { require DateTimeFoo };
+    eval { require DateTime };
     skip("Skipped tests: failed to load DateTime", 10 ) if @_;
 
     my $class = 'Form::Processor::Field::DateTimeDMYHM';

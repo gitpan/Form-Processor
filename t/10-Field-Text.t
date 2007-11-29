@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-my $tests = 9;
+my $tests = 14;
 plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Text';
@@ -46,3 +46,23 @@ $field->validate_field;
 ok( !$field->has_error, 'Test for errors 3' );
 is( $field->value, 'hello', 'Check again' );
 
+$field->size( 3 );
+$field->validate_field;
+ok( $field->has_error, 'Test for too long' );
+
+$field->size( 5 );
+$field->validate_field;
+ok( !$field->has_error, 'Test for right length' );
+
+
+$field->min_length( 10 );
+$field->validate_field;
+ok( $field->has_error, 'Test not long enough' );
+
+$field->min_length( 5 );
+$field->validate_field;
+ok( !$field->has_error, 'Test just long enough' );
+
+$field->min_length( 4 );
+$field->validate_field;
+ok( !$field->has_error, 'Test plenty long enough' );

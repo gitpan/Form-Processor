@@ -1,7 +1,8 @@
 use strict;
 use warnings;
+use Test::More skip_all => "Can't test all without all modules";
+
 use Module::Find;
-use Test::More;
 
 my @fields = Module::Find::findsubmod Form::Processor::Field;
 

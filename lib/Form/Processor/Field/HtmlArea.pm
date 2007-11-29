@@ -5,8 +5,6 @@ use base 'Form::Processor::Field::TextArea';
 use HTML::Tidy;
 use File::Temp;
 
-our $VERSION = '0.02';
-
 my $tidy;
 
 sub init_widget { 'textarea' }
@@ -73,5 +71,54 @@ EOF
 
 
 }
+
+
+=head1 NAME
+
+Form::Processor::Field::HtmlArea - Input HTML in a textarea
+
+=head1 SYNOPSIS
+
+See L<Form::Processor>
+
+=head1 DESCRIPTION
+
+Field validates using HTML::Tidy.  A simple Tidy configuration file
+is created and written to disk each time the field is validated.
+
+=head2 Widget
+
+Fields can be given a widget type that is used as a hint for
+the code that renders the field.
+
+This field's widget type is: "textarea".
+
+=head2 Subclass
+
+Fields may inherit from other fields.  This field
+inherits from: "Textarea".
+
+=head1 DEPENDENCIES
+
+L<HTML::Tidy>  L<File::Temp>
+
+=head1 AUTHORS
+
+Bill Moseley
+
+=head1 COPYRIGHT
+
+See L<Form::Processor> for copyright.
+
+This library is free software, you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SUPPORT / WARRANTY
+
+L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
+Users are expected to review software for fitness and usability.
+
+=cut
+
 
 1;
