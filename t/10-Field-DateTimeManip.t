@@ -1,20 +1,15 @@
 use strict;
 use warnings;
 
-use Test::More;
-plan tests => 16;
+use lib './t';
+use MyTest
+    tests   => 16,
+    recommended => [qw/ DateTime Date::Manip DateTime::Format::DateManip /];
+
 
 my $class = 'Form::Processor::Field::DateTimeManip';
 my $name = $1 if $class =~ /::([^:]+)$/;
 
-SKIP:
-{
-    eval { require DateTime };
-    skip( 'Skipped: Failed to load DateTime module', 10 ) if $@;
-    eval { require Date::Manip };
-    skip( 'Skipped: Failed to load Date::Manip module', 10 ) if $@;
-    eval { require DateTime::Format::DateManip };
-    skip( 'Skipped: Failed to load DateTime::Format::DateManip module', 10 ) if $@;
 
 
     use_ok( $class );
@@ -53,6 +48,5 @@ SKIP:
 
     # Not sure how to best test thsi with I10N
     is( $field->errors->[0], "Sorry, don't understand date", 'Compare error string');
-}
 
 

@@ -12,30 +12,41 @@ requires 'Module::Find'       => '0.05';
 
 build_requires 'Test::More' => 0;
 
-# DateTimeManip, DateTimeDMYHM, DateTime
 
-recommends 'DateTime'                    => '0.34';
-recommends 'Date::Manip'                 => '5.44';
-recommends 'DateTime::Format::DateManip' => '0.04';
+my %recommended = (
 
-# Email
-recommends 'Email::Valid' => '0';
+    'DateTime'                    => '0.34',
+    'Date::Manip'                 => '5.44',
+    'DateTime::Format::DateManip' => '0.04',
+    'Email::Valid'                => '0.179',
+    'Template'                    => '2.19',
+    'HTML::Tidy'                  => '1.06',
+    'File::Temp'                  => '0.16',
+    'Net::CIDR'                   => '0.11',
+    'Digest::MD5'                 => '2.36',
+);
 
+recommends $_ => $recommended{$_} for keys %recommended;
 
-# Template
-recommends 'Template' => '2.19';
+sub MY::postamble {
+    my $optional = join ',', keys %recommended;
+    return <<"EOM";
 
-# HtmlArea -- requires Tidylib
-recommends 'HTML::Tidy' => '1.06';
-recommends 'File::Temp' => '0.16';
+test-missing:
+\texport DEVEL_HIDE_VERBOSE=0; perl -MDevel::Hide=-from:children,$optional -e 'exec("make test")'
 
-# CIDR_List
-recommends 'Net::CIDR' => '0.11';
+test-all:
+\texport TEST_ALL_MODULES=1; make test
+EOM
 
-# MD5_Password
-recommends 'Digest::MD5' => '2.36';
-
+}
 
 
 auto_install;
 WriteAll;
+
+print <<EOF;
+    make test           - test normal environment ignoring recommended modules
+    make test-missing:  - test case of all recommeneded modules missing
+    make test-all       - require all recommended modules
+EOF

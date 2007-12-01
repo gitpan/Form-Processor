@@ -1,17 +1,13 @@
 use strict;
 use warnings;
+use lib './t';
+use MyTest
+    tests   => 6,
+    recommended => [qw/ Net::CIDR /];
 
-use Test::More;
-
-plan tests => 6;
 
 my $class = 'Form::Processor::Field::CIDR_List';
 my $name = $1 if $class =~ /::([^:]+)$/;
-
-SKIP:
-{
-    eval { require Net::CIDR };
-    skip( 'Skip: failed to load module Net::CIDR', 7 ) if $@;
 
 
     use_ok( $class );
@@ -32,8 +28,5 @@ SKIP:
     $field->validate_field;
     ok( $field->has_error, 'Test for errors 1' );
     is( $field->errors->[0], "Failed to parse address '192.168.1.1/300'", 'Test error message' );
-
-
-}
 
 

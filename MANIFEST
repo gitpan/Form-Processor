@@ -101,4 +101,5 @@ t/10-Field-Weekday.t
 t/10-Field-WeekdayStr.t
 t/10-Field-Year.t
 t/20form.t
+t/MyTest.pm
 TODO

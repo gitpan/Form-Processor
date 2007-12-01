@@ -1,13 +1,11 @@
 use strict;
 use warnings;
+use lib './t';
+use MyTest
+    tests   => 2,
+    recommended => [qw/ DateTime /];
 
-use Test::More skip_all => 'On the todo list';
-plan tests => 10;
 
-SKIP:
-{
-    eval { require DateTimeFoo };
-    skip("Skipped tests: failed to load DateTime", 10 ) if @_;
 
     my $class = 'Form::Processor::Field::DateTimeDMYHM2';
 
@@ -23,6 +21,4 @@ SKIP:
 
     ok( defined $field,  'new() called' );
 
-    skip( "This test is TODO", 1 );
 
-}

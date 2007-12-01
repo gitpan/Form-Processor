@@ -1,16 +1,14 @@
 use strict;
 use warnings;
+use lib './t';
+use MyTest
+    tests   => 7,
+    recommended => [qw/ Email::Valid /];
 
-use Test::More;
-plan tests => 7;
+
 
 my $class = 'Form::Processor::Field::Email';
 my $name = $1 if $class =~ /::([^:]+)$/;
-
-SKIP:
-{
-    eval { require Email::Valid };
-    skip( 'Skip: failed to load module Email::Valid', 7 ) if $@;
 
 
     use_ok( $class );
@@ -37,5 +35,4 @@ SKIP:
     ok( !$field->has_error, 'Test for errors 2 although probably should fail' );
 
 
-}
 

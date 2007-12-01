@@ -1,10 +1,13 @@
 package Form::Processor::Field::Template;
 use strict;
 use warnings;
+use lib './t';
+use MyTest
+    tests   => 5,
+    recommended => [qw/ Template::Parser /];
 
-use Test::More;
-my $tests = 5;
-plan tests => $tests;
+
+
 
 my $class = 'Form::Processor::Field::Template';
 my $name = $1 if $class =~ /::([^:]+)$/;
@@ -26,11 +29,6 @@ my $bad_template = <<'';
     <p><b>and bold without ending tag</p>
 
 
-SKIP:
-{
-    eval { require Template::Parser };
-    skip( 'Skip: failed to load module Template::Parser', $tests ) if $@;
-
 
     use_ok( $class );
     my $field = $class->new(
@@ -51,5 +49,4 @@ SKIP:
     ok( $field->has_error, 'Test for failure 2' );
     like( $field->errors->[0], qr/unexpected token \(baz\)/, 'Check parser message' );
 
-}
 

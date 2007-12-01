@@ -1,9 +1,12 @@
 use strict;
 use warnings;
 
-use Test::More;
-my $tests = 5;
-plan tests => $tests;
+use lib './t';
+use MyTest
+    tests   => 5,
+    recommended => [qw/ HTML::Tidy File::Temp /];
+
+
 
 my $class = 'Form::Processor::Field::HtmlArea';
 my $name = $1 if $class =~ /::([^:]+)$/;
@@ -22,14 +25,6 @@ my $bad_html = <<'';
     </p>
     <p><b>and bold without ending tag</p>
 
-
-SKIP:
-{
-    eval { require HTML::Tidy };
-    skip( 'Skip: failed to load module HTML::Tidy', $tests ) if $@;
-
-    eval { require File::Temp };
-    skip( 'Skip: failed to load module File::Temp', $tests ) if $@;
 
 
     use_ok( $class );
@@ -51,5 +46,4 @@ SKIP:
     ok( $field->has_error, 'Test for failure 2' );
     is( $field->errors->[0],' (4:8) Warning: missing </b> before </p>', 'Check tidy message' );
 
-}
 

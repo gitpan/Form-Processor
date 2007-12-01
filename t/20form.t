@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use Test::More;
-my $tests = 8;
+my $tests = 7;
 plan tests => $tests;
 
 use_ok( 'Form::Processor' );
@@ -37,7 +37,6 @@ ok( $form->field('reqname')->has_error, 'reqname has error' );
 ok( !$form->field('optname')->has_error, 'optname has no error' );
 
 $form->clear;
-ok ( !$form->validate( { email => 'bad_email' } ), 'Validate bad email' );
 
 
 
@@ -54,7 +53,6 @@ sub profile {
         },
         optional    => {
             optname     => 'Text',
-            email       => 'Email',
         },
     };
 }

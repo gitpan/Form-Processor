@@ -1,14 +1,16 @@
 use strict;
 use warnings;
+use lib './t';
+use MyTest
+    tests   => 4,
+    recommended => [qw/ Digest::MD5 /];
 
-use Test::More;
-plan tests => 4;
+
+
 
 my $class = 'Form::Processor::Field::MD5_Password';
 my $name = $1 if $class =~ /::([^:]+)$/;
 
-SKIP:
-{
     eval { require Digest::MD5 };
     skip( 'Skip: failed to load module Digets::MD5', 7 ) if $@;
 
@@ -29,9 +31,6 @@ SKIP:
     $field->validate_field;
     ok( !$field->has_error, 'Test for errors 1' );
     is( $field->value, Digest::MD5::md5_hex( $pass ), 'value returned' );
-
-
-}
 
 
 package my_form;
