@@ -37,6 +37,10 @@ use Rose::Object::MakeMethods::Generic (
 
         value_format => { interface => 'get_set_init' },  # sprintf format to use when converting input to value
 
+        # Often the fields need a unique id for js, so many a
+        # handy way to get this.
+        id           => { interface => 'get_set_init' },
+
     ],
 
     boolean => [
@@ -156,14 +160,17 @@ contained in a form.  This is a reference to that form.
 
 =item id
 
-Returns an id for the field, which is 
+Returns an id for the field, which is by default:
 
     $field->form->name . $field->id
 
+A field may override with "init_id".
+
 =cut
 
-sub id {
+sub init_id {
     my $field = shift;
+    my $form_name = $field->form ? $field->form->name : 'fld-';
     return $field->form->name . $field->name
 }
 
@@ -626,7 +633,7 @@ sub test_multiple {
 
     my $value = $self->input;
 
-    if ( $self->can('options') &&  !$self->multiple && ref $value eq 'ARRAY' ) {
+    if ( ref $value eq 'ARRAY' && !( $self->can('multiple') && $self->multiple) ) {
         $self->add_error('This field does not take multiple values');
         return;
     }

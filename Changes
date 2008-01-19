@@ -1,5 +1,12 @@
 Revision history for Perl extension Form::Processor.
 
+0.16 Sat Jan 19 22:41:56 UTC 2008
+    Changed the field's "id" method to be mutable.
+
+    Changed the "test_multiple" field method to look at input
+    catch multiple values in all cases not just for fields with
+    options.
+
 0.15 Sat Dec  1 18:16:30 UTC 2007
     Fixed failing tests when recommended modules did not exist.
     Got spanked by CPAN testers for that one.
