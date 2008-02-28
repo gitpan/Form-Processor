@@ -2,6 +2,7 @@ package Form::Processor::Field::USPhone;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
+our $VERSION = '0.03';
 
 sub validate {
     my $self = shift;

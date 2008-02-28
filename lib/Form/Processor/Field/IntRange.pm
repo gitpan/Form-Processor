@@ -2,6 +2,7 @@ package Form::Processor::Field::IntRange;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Select';
+our $VERSION = '0.03';
 
 use Rose::Object::MakeMethods::Generic (
     scalar => [

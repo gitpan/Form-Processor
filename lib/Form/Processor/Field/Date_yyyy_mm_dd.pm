@@ -2,6 +2,7 @@ package Form::Processor::Field::Date_yyyy_mm_dd;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::DateTime';
+our $VERSION = '0.03';
 
 
 

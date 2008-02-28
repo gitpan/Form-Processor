@@ -2,6 +2,7 @@ package Form::Processor::Field::Checkbox;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Boolean';
+our $VERSION = '0.03';
 
 sub init_widget { 'checkbox' }
 

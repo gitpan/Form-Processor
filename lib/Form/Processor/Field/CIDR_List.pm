@@ -2,6 +2,7 @@ package Form::Processor::Field::CIDR_List;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
+our $VERSION = '0.03';
 
 use Net::CIDR;
 

@@ -2,6 +2,7 @@ package Form::Processor::Field::OneToTen;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::IntRange';
+our $VERSION = '0.03';
 
 
 =head1 NAME

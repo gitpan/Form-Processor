@@ -2,6 +2,7 @@ package Form::Processor::Field::Second;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Minute';
+our $VERSION = '0.03';
 
 sub init_range_start { 0 }
 sub init_range_end { 59 }

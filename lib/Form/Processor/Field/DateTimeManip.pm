@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field';
 use DateTime::Format::DateManip;
+our $VERSION = '0.03';
 
 my %date;
 

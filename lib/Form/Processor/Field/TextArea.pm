@@ -2,6 +2,7 @@ package Form::Processor::Field::TextArea;
 use strict;
 use warnings;
 use base 'Form::Processor::Field';
+our $VERSION = '0.03';
 
 sub init_widget { 'textarea' }
 

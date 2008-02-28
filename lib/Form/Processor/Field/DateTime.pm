@@ -2,6 +2,7 @@ package Form::Processor::Field::DateTime;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::DateTimeManip';
+our $VERSION = '0.03';
 
 
 =head1 NAME

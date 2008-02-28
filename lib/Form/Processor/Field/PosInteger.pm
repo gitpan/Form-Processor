@@ -2,6 +2,7 @@ package Form::Processor::Field::PosInteger;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Integer';
+our $VERSION = '0.03';
 
 
 sub validate {

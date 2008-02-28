@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field::Password';
 use Digest::MD5 'md5_hex';
+our $VERSION = '0.03';
 
 
 

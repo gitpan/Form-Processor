@@ -2,6 +2,7 @@ package Form::Processor::Field::Weekday;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Select';
+our $VERSION = '0.03';
 
 
 sub init_options {

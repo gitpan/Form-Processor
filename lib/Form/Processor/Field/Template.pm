@@ -1,6 +1,7 @@
 package Form::Processor::Field::Template;
 use strict;
 use warnings;
+our $VERSION = '0.03';
 
 # This doesn't work because need to transform the input data before can validate
 # and the Form module doesn't support this.

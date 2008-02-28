@@ -2,6 +2,7 @@ package Form::Processor::Field::Money;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
+our $VERSION = '0.03';
 
 sub init_value_format { '%.2f' }
 

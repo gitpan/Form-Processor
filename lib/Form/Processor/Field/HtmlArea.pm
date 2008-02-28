@@ -4,6 +4,7 @@ use warnings;
 use base 'Form::Processor::Field::TextArea';
 use HTML::Tidy;
 use File::Temp;
+our $VERSION = '0.03';
 
 my $tidy;
 

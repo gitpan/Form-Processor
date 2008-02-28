@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field';
 use DateTime;
+our $VERSION = '0.03';
 
 sub init_widget { 'Compound' }
 

@@ -4,6 +4,7 @@ use warnings;
 use base 'Form::Processor::Field';
 use Form::Processor;
 use DateTime;
+our $VERSION = '0.03';
 
 # This implements a field made up of sub fields.
 

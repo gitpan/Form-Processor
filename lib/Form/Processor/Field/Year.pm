@@ -2,6 +2,7 @@ package Form::Processor::Field::Year;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::IntRange';
+our $VERSION = '0.03';
 
 
 sub init_range_start {

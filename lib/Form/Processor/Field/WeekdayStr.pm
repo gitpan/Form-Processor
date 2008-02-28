@@ -2,6 +2,7 @@ package Form::Processor::Field::WeekdayStr;
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Weekday';
+our $VERSION = '0.03';
 
 
 # Join the list of values into a single string
