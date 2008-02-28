@@ -8,7 +8,7 @@ use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 use Scalar::Util;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 
 # Define basic instance interface
@@ -813,7 +813,7 @@ sub init {
     # and return false if the item is not loaded.
     # This just helps in validating the id passed in the controller
 
-    return if $self->item_id && !$self->item;
+    return if defined $self->item_id && !$self->item;
 
 
 
