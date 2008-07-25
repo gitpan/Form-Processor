@@ -1,5 +1,9 @@
 Revision history for Perl extension Form::Processor.
 
+0.19 Fri Jul 25 17:47:36 UTC 2008
+    Fix spelling error in error message in "test_ranges".
+
+
 0.18 Thu Feb 28 04:46:06 UTC 2008
     No Changes -- just added version numbers to fields to
     make CPAN indexer happy.

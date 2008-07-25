@@ -6,7 +6,7 @@ use Form::Processor::I18N;  # only needed if running without a form object.
 use Scalar::Util;
 
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 use Rose::Object::MakeMethods::Generic (
@@ -565,19 +565,19 @@ sub test_ranges {
     if ( defined $low && defined $high ) {
         return $input >= $low && $input <= $high
             ? 1
-            : $field->add_error( 'valume must be between [_1] and [_2]', $low, $high );
+            : $field->add_error( 'value must be between [_1] and [_2]', $low, $high );
     }
 
     if ( defined $low ) {
         return $input >= $low
             ? 1
-            : $field->add_error( 'valume must be greater than or equal to [_1]', $low );
+            : $field->add_error( 'value must be greater than or equal to [_1]', $low );
     }
 
     if ( defined $high ) {
         return $input <= $high
             ? 1
-            : $field->add_error( 'valume must be less than or equal to [_1]', $high );
+            : $field->add_error( 'value must be less than or equal to [_1]', $high );
     }
 
     return 1;
