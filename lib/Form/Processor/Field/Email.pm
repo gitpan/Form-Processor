@@ -1,21 +1,26 @@
 package Form::Processor::Field::Email;
 use strict;
 use warnings;
-use base 'Form::Processor::Field';
+use base 'Form::Processor::Field::Text';
 use Email::Valid;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
+
+
+
+sub init_size { 254 } # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
 
 sub validate {
     my $self = shift;
 
     return unless $self->SUPER::validate;
 
-    $self->input( lc $self->{input} );
 
+    my $email = Email::Valid->address( $self->input );
 
     return $self->add_error('Email should be of the format [_1]', 'someuser@example.com')
-        unless Email::Valid->address( $self->input );
+        unless $email;
 
+    $self->input( $email );
 
     return 1;
 }
@@ -32,6 +37,12 @@ See L<Form::Processor>
 =head1 DESCRIPTION
 
 Validates that the input looks like an email address uisng L<Email::Valid>.
+
+Note:
+
+    0.184 Email::Valid does not check local length limits and
+    does not check for max length.  Also, for domains that exceed
+    the 255 limit a warning is issued due to a compare with an undefined value.
 
 =head2 Widget
 

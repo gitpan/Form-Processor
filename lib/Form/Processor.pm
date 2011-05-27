@@ -8,7 +8,7 @@ use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 use Scalar::Util;
 
-our $VERSION = '0.19';
+our $VERSION = '0.20';
 
 
 # Define basic instance interface
@@ -20,6 +20,7 @@ use Rose::Object::MakeMethods::Generic (
         validated
         verbose
         readonly
+        use_existing_values
     )],
 
 
@@ -160,6 +161,9 @@ Or when you need a quick, small form do this in a controller:
 
 [Docs under construction.  The docs are probably, well, less concise then they could be.
 Editors are welcome..]
+
+Note: Please see L<HTML::FormHandler> for a well-supported, Moose-based
+derivation of L<Form::Processor>.
 
 
 This is a class for working with forms.  A form acts as a layer between your
@@ -1321,6 +1325,8 @@ sub validate {
     # Set params -- so can be used by fif later.
     $self->params( $params );
 
+    $self->set_existing_values if $self->use_existing_values;
+
     $self->set_dependency;  # set required dependencies
 
 
@@ -1551,6 +1557,65 @@ sub value_changed {
 
     return $field->value_changed;
 }
+
+
+=item use_existing_values
+
+Default: false
+
+By default all required fields MUST be supplied to the validate method.
+This works great for forms submitted by browsers because browsers
+submit all fields (except un-selected checkboxes and radio buttons).
+
+When used with an API or AJAX it may be useful to allow a subset
+of fields to be submitted.  Fields not submitted retain their
+existing value.
+
+When this flag is true if the field is not supplied in the hash
+supplied to the validate method then will default to the field's
+current formatted value, if any.
+
+Do not enable this on web forms, though.  Otherwise, any checkboxs
+will always remain checked once checked.
+
+If this feature is enabled it can be selectively disabled on a field
+by setting the field's "allow_existing" attribute.  This simply
+means that a key of the field's name must be supplied.  It does
+not inspect the key's value.
+
+This is implemented by set_existing_values.
+
+
+=item set_existing_values EXPERIMENTAL
+
+
+This method will load existing values into params for any not supplied.
+
+This does not work on compound fields.
+
+=cut
+
+sub set_existing_values {
+    my $form = shift;
+
+    my $params = $form->params;
+
+    for my $field ( $form->fields ) {
+
+        # Does the field insist that the value must be provided?
+        next if $field->must_submit;
+
+        my $name = $field->name;
+        next if exists $params->{$name};
+
+        next if $field->writeonly;
+
+        my %hash_params = $field->format_value;
+
+        $form->params( %hash_params );
+    }
+}
+
 
 
 

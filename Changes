@@ -1,5 +1,32 @@
 Revision history for Perl extension Form::Processor.
 
+0.20 Thu May 19 05:19:37 PDT 2011
+    Note: ** Potential breakage of your application **
+
+    Added the "max_size" attribute to Form::Processor::Field
+    base class which defaults to 10,000.
+
+    The Text field's "size" default has been changed from
+    zero to 2,500.
+
+    The Text field was simply a base class that added lengths
+    and was intended to be overridden.  But, as a sanity
+    check for all fields there is now this default of 2,500
+    characters.
+
+    It is still expected that users create their own Field
+    subclasses to match their applications and add validation.
+
+
+    The Email field is now limited to 254 characters
+    and uses the output from Email::Valid::address.
+
+
+    New Form attribute "use_existing_values" has
+    been added and a new Field attribute "must_submit".
+    See docs for these related attributes.
+
+
 0.19 Fri Jul 25 17:47:36 UTC 2008
     Fix spelling error in error message in "test_ranges".
 

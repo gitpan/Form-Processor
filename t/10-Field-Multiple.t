@@ -33,6 +33,8 @@ is( $field->value, 1, 'Test true == 1' );
 $field->input( [1] );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 2' );
+
+
 ok( eq_array( $field->value, [1], 'test array' ), 'Check [1]');
 
 $field->input( [1,2] );

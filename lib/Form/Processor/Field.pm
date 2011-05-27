@@ -6,7 +6,7 @@ use Form::Processor::I18N;  # only needed if running without a form object.
 use Scalar::Util;
 
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 
 use Rose::Object::MakeMethods::Generic (
@@ -41,6 +41,8 @@ use Rose::Object::MakeMethods::Generic (
         # handy way to get this.
         id           => { interface => 'get_set_init' },
 
+        max_size     => { interface => 'get_set_init' },
+
     ],
 
     boolean => [
@@ -62,7 +64,9 @@ use Rose::Object::MakeMethods::Generic (
 
         # Since disabled and readonly effect the UI differently
         # use a separate flag to tell the model to not update a field.
-        noupdate    => { interface => 'get_set_init' }     # don't update this field in the database
+        noupdate    => { interface => 'get_set_init' },    # don't update this field in the database
+
+        must_submit => { interface => 'get_set' }       # override use_existing_values
     ],
 
     array => [
@@ -113,6 +117,7 @@ as a list of parameters.
 
 =cut
 
+
 sub init {
     my $self = shift;
 
@@ -121,6 +126,19 @@ sub init {
     die "Need to supply name parameter"
         unless $self->name;
 }
+
+=item must_submit
+
+This boolean value defaults to false.
+
+When true AND when the form's attribute "use_existing_values" is
+set then this field will not default to any existing value.
+
+This provides a way to selectively disable "use_existing_values"
+on a per-field basis.
+
+This has no effect if "use_existing_values" is false on the form.
+
 
 =item full_name
 
@@ -300,17 +318,20 @@ sub add_error {
 
 }
 
-=item size
+=item max_size
 
 This can be used to specify a max length of a field.
-The Text field type will validate on this value if set.
-Default is zero.
+Defaults to 10,000 characters.
+
+Added in .20 as a sanity check.
 
 =cut
 
+sub init_max_size { 10_000 } # sanity check
+
 =item min_length
 
-If set Text-based fields must be this many charactres long to validate.
+If set "Text"-based fields must be this many charactres long to validate.
 Default is zero.
 
 =cut
@@ -432,6 +453,20 @@ sub validate_field {
 
     return unless $field->test_multiple;
     return unless $field->test_options;
+
+
+    # Check for max length new .20.
+    if ( my $size = $field->max_size  ) {
+
+        my $value = $field->input;
+
+        if ( length( $value ) > $size ) {
+            $field->add_error( 'Please limit to [quant,_1,character]. You submitted [_2]', $size, length $value );
+            return;
+        }
+    }
+
+
     return unless $field->validate;
     return unless $field->test_ranges;
 

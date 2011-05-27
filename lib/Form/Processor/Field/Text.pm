@@ -2,17 +2,17 @@ package Form::Processor::Field::Text;
 use strict;
 use warnings;
 use base 'Form::Processor::Field';
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 use Rose::Object::MakeMethods::Generic (
     scalar => [
-        size            => { interface => 'get_set_init' },
         min_length      => { interface => 'get_set_init' },
+        size            => { interface => 'get_set_init' },
     ],
 );
 
-sub init_size { 0 }
+sub init_size { 2500 }  # new in .20 as a sanity check
 sub init_min_length { 0 }
 
 
@@ -27,8 +27,9 @@ sub validate {
     my $value = $field->input;
 
 
-    # Check for max length
     if ( my $size = $field->size  ) {
+
+        my $value = $field->input;
 
         return $field->add_error( 'Please limit to [quant,_1,character]. You submitted [_2]', $size, length $value )
             if length $value > $size;
@@ -76,12 +77,22 @@ inherits from: "Field".
 =head2 size [integer]
 
 This integer value, if non-zero, defines the max size in characters of the input field.
-This setting may also be used in formatting the field in the user interface.
+
+The recommendation is to not use "Text" fields directly but to create
+a subclass for each type of input (e.g. Name) that inherits from this
+class and sets additional validation, including size.
+
+As of L<Form::Processor> version .20 (0.04 for this class) the default has
+changed from zero to 2500.
+
+
 
 =head2 min_length [integer]
 
 This integer value, if non-zero, defines the minimum number of characters that must 
 be entered.
+
+Default to zero characters.
 
 
 =head1 AUTHORS
