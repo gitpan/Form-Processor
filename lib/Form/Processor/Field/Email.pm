@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
 use Email::Valid;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 
 
@@ -20,7 +20,7 @@ sub validate {
     return $self->add_error('Email should be of the format [_1]', 'someuser@example.com')
         unless $email;
 
-    $self->input( $email );
+    $self->input( lc $email );
 
     return 1;
 }
@@ -37,6 +37,9 @@ See L<Form::Processor>
 =head1 DESCRIPTION
 
 Validates that the input looks like an email address uisng L<Email::Valid>.
+
+The final email address is the lower case of the output from
+L<Email::Valid::address>.
 
 Note:
 

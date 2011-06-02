@@ -1,5 +1,11 @@
 Revision history for Perl extension Form::Processor.
 
+0.21 Wed Jun  1 17:51:27 PDT 2011
+    When updating the Email field left out the lower case.
+    Email::Valid does not lowercase the domain, and
+    it is common practice to lowercase the local
+    part.
+
 0.20 Thu May 19 05:19:37 PDT 2011
     Note: ** Potential breakage of your application **
 
