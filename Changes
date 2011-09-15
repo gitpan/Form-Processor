@@ -1,5 +1,8 @@
 Revision history for Perl extension Form::Processor.
 
+0.22 Thu Sep 15 17:00:36 EEST 2011  (Lamu)
+    encode_utf8 the MD5_Password so md5_hex won't croak on wide chars
+
 0.21 Wed Jun  1 17:51:27 PDT 2011
     When updating the Email field left out the lower case.
     Email::Valid does not lowercase the domain, and

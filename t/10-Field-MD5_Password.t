@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use Encode;
 use lib './t';
 use MyTest
     tests   => 4,
@@ -25,12 +26,12 @@ my $name = $1 if $class =~ /::([^:]+)$/;
 
     ok( defined $field,  'new() called' );
 
-    my $pass = '4my_secret_password_123';
+    my $pass = '4my_secret_password_123' . "\x{040C}";
 
-    $field->input( '4my_secret_password_123' );
+    $field->input( $pass );
     $field->validate_field;
     ok( !$field->has_error, 'Test for errors 1' );
-    is( $field->value, Digest::MD5::md5_hex( $pass ), 'value returned' );
+    is( $field->value, Digest::MD5::md5_hex( Encode::encode_utf8($pass) ), 'value returned' );
 
 
 package my_form;
@@ -43,7 +44,7 @@ sub profile {
         optional => {
             login       => 'Text',
             username    => 'Text',
-            password    => 'Password',
+            password    => 'MD5_Password',
         },
     };
 }

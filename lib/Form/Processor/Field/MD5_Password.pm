@@ -3,7 +3,8 @@ use strict;
 use warnings;
 use base 'Form::Processor::Field::Password';
 use Digest::MD5 'md5_hex';
-our $VERSION = '0.03';
+use Encode;
+our $VERSION = '0.04';
 
 
 
@@ -24,7 +25,10 @@ sub validate {
 sub input_to_value {
     my $field = shift;
 
-    $field->value( md5_hex( $field->input ) );
+    # Failing test
+    #$field->value( md5_hex(  $field->input  ) );
+
+    $field->value( md5_hex( Encode::encode_utf8( $field->input ) ) );
 
     return;
 }

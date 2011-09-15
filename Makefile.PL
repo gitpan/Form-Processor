@@ -9,6 +9,7 @@ requires 'Scalar::Util'       => '1.18';
 requires 'UNIVERSAL::require' => '0';
 requires 'Locale::Maketext'   => '1.09';
 requires 'Module::Find'       => '0.05';
+requires 'Encode'             => '0';
 
 build_requires 'Test::More' => 0;
 
