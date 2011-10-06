@@ -1,5 +1,8 @@
 Revision history for Perl extension Form::Processor.
 
+0.30 Thu Oct  6 05:05:47 EEST 2011
+    This is a version bump only. No code changes.
+
 0.22 Thu Sep 15 17:00:36 EEST 2011  (Lamu)
     encode_utf8 the MD5_Password so md5_hex won't croak on wide chars
 
