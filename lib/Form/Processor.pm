@@ -8,7 +8,7 @@ use Locale::Maketext;
 use Form::Processor::I18N;  # base class for language files
 use Scalar::Util;
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
 
 # Define basic instance interface

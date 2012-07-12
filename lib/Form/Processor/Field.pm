@@ -721,7 +721,7 @@ sub test_options {
 
     for my $value ( ref $input eq 'ARRAY' ? @$input : ($input) ) {
         unless ( $options{$value} ) {
-            $self->add_error( "'$value' is not a valid value" );
+            $self->add_error( "'[_1]' is not a valid value", $value );
             return;
         }
     }

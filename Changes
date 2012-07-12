@@ -1,5 +1,9 @@
 Revision history for Perl extension Form::Processor.
 
+0.31 Wed Jul 11 21:41:02 PDT 2012
+    - Fixed missing localization of string.
+      RT #78319 reported by Fred Moyer.
+
 0.30 Thu Oct  6 05:05:47 EEST 2011
     This is a version bump only. No code changes.
 
