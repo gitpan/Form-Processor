@@ -1,16 +1,12 @@
 package Form::Processor::Field::Template;
 use strict;
 use warnings;
-use lib './t';
-use MyTest
-    tests   => 5,
-    recommended => [qw/ Template::Parser /];
-
+use Test::More tests => 5;
+use Template::Parser;
 
 
 
 my $class = 'Form::Processor::Field::Template';
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 # Mosty to test for bad nesting
 
@@ -30,23 +26,23 @@ my $bad_template = <<'';
 
 
 
-    use_ok( $class );
-    my $field = $class->new(
-        name    => 'test_field',
-        type    => $name,
-        form    => undef,
-    );
+use_ok( $class );
+my $field = $class->new(
+    name => 'test_field',
+    type => 'Template',
+    form => undef,
+);
 
-    ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
-    $field->input( $good_template );
-    $field->validate_field;
-    ok( !$field->has_error, 'Test for errors 1' );
+$field->input( $good_template );
+$field->validate_field;
+ok( !$field->has_error, 'Test for errors 1' );
 
 
-    $field->input(  $bad_template );
-    $field->validate_field;
-    ok( $field->has_error, 'Test for failure 2' );
-    like( $field->errors->[0], qr/unexpected token \(baz\)/, 'Check parser message' );
+$field->input( $bad_template );
+$field->validate_field;
+ok( $field->has_error, 'Test for failure 2' );
+like( $field->errors->[0], qr/unexpected token \(baz\)/, 'Check parser message' );
 
 

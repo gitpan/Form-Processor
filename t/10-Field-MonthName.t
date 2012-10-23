@@ -7,16 +7,15 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::MonthName';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'MonthName',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 for ( 1 .. 12 ) {
     $field->input( $_ );

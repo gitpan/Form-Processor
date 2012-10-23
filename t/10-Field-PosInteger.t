@@ -7,16 +7,15 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::PosInteger';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'PosInteger',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 $field->input( 1 );
 $field->validate_field;
@@ -53,8 +52,6 @@ TODO: {
     local $TODO = 'What if the datastore has a non integer?';
     is( $field->format_value, '123', 'Test non-integer formatted ' );
 }
-
-
 
 
 

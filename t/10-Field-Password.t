@@ -7,7 +7,6 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Password';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 
@@ -17,15 +16,16 @@ use_ok( $class );
 my $form = my_form->new;
 
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
+    name => 'test_field',
+    type => 'Password',
+
     #form    => my_form->new, # this doesn't work but the next line does?
-    form    => $form,  # TODO - something wrong with Field::form()?
+    form => $form,    # TODO - something wrong with Field::form()?
 );
 
 
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 $field->input( '2192ab201def' );
 $field->validate_field;
@@ -59,7 +59,7 @@ my $pass = 'my4user5name';
 $field->input( $pass );
 $field->validate_field;
 ok( !$field->has_error, 'just right' );
-is ( $field->value, $pass, 'Input and value match' );
+is( $field->value, $pass, 'Input and value match' );
 
 
 package my_form;
@@ -70,18 +70,18 @@ use base 'Form::Processor';
 sub profile {
     return {
         optional => {
-            login       => 'Text',
-            username    => 'Text',
-            password    => 'Password',
+            login    => 'Text',
+            username => 'Text',
+            password => 'Password',
         },
     };
 }
 
 
 sub params {
-    {
-        login       => 'my4login55',
-        username    => 'my4username',
+    return {
+        login    => 'my4login55',
+        username => 'my4username',
     };
 }
 

@@ -6,16 +6,14 @@ plan tests => 10;
 
 my $class = 'Form::Processor::Field::Boolean';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
-
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'Boolean',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 $field->input( 1 );
 $field->validate_field;
@@ -38,8 +36,6 @@ $field->input( '0' );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 4' );
 is( $field->value, 0, 'Test true == 0' );
-
-
 
 
 

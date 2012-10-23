@@ -1,4 +1,7 @@
 package Form::Processor::Model;
+{
+  $Form::Processor::Model::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Rose::Object';
@@ -12,15 +15,83 @@ use Scalar::Util qw/ blessed /;
 use Rose::Object::MakeMethods::Generic (
 
     scalar => [
-        object_class    => { interface => 'get_set_init' },
+        object_class => { interface => 'get_set_init' },
+
         #item_id         => {},  # Can't init from item->id because of circular references
-        item            => { interface => 'get_set_init' },
+        item => { interface => 'get_set_init' },
     ],
 );
 
+# ABSTRACT: default model base class
+
+
+
+sub init_object_class {
+    my $self = shift;
+    my $item = $self->item;
+    return ref $item;    # may be undefined
+}
+
+
+
+
+sub init_item {return}
+
+
+
+sub guess_field_type { Carp::confess "Don't know how to determine field type of [$_[1]]" }
+
+
+
+sub lookup_options {return}
+
+
+
+
+sub init_value {
+    my ( $self, $field, $item ) = @_;
+    my $name = $field->name;
+
+    return $item->can( $name ) ? $item->$name : undef
+        if blessed( $item );
+
+
+    return $item->{$name};
+
+}
+
+
+sub update_from_form {
+    die "must define 'update_from_form' in Form::Processor::Model subclass";
+}
+
+
+
+
+
+sub model_validate { }
+
+
+
+
+
+1;
+
+
+
+
+
+
+__END__
+=pod
+
 =head1 NAME
 
-Form::Model -- default model base class
+Form::Processor::Model - default model base class
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -86,17 +157,6 @@ as it sounds because "item" doesn't exist when creating new records.
 
 This can also be set as a parameter to new, but will be overridden in subclasses.
 
-=cut
-
-
-sub init_object_class {
-    my $self = shift;
-    my $item = $self->item;
-    return ref $item;   # may be undefined
-}
-
-
-
 =item init_item
 
 This is called first time $form->item is called.  This method must be
@@ -107,11 +167,6 @@ by calling methods on the returned object.
 For example, with Class::DBI you might return:
 
     return $self->object_class->retrieve( $self->item_id );
-
-=cut
-
-sub init_item { return }
-
 
 =item guess_field_type
 
@@ -125,11 +180,6 @@ example, if you use a field naming convention that indicates the field type.
 Form::Processor::Model::CDBI uses CDBI's meta_info() method to look at
 relationships and figure out the field type.  Other form model classes might
 look at the database for this information, for example.
-
-=cut
-
-sub guess_field_type { Carp::confess "Don't know how to determine field type of [$_[1]]" }
-
 
 =item lookup_options
 
@@ -154,13 +204,6 @@ Form::Processor::Model::CDBI, for example, uses meta_info() to look at related
 classes and returns a list of options sorted by the label column which by
 default is "name".
 
-
-=cut
-
-sub lookup_options { return }
-
-
-
 =item init_value
 
 This method populates a form field's value from the item object.
@@ -172,20 +215,6 @@ The default method basically does:
     my $name = $field->name;
     return $item->can( $name ) ? $item->$name : undef
         if blessed( $item );
-
-=cut
-
-sub init_value {
-    my ($self, $field, $item) = @_;
-    my $name = $field->name;
-
-    return $item->can( $name ) ? $item->$name : undef
-        if blessed( $item );
-
-
-    return $item->{$name};
-
-}
 
 =item update_from_form
 
@@ -208,17 +237,7 @@ between requests.)
 
 See Form::Processor::Model::CDBI for an example.
 
-
 The default method dies.
-
-=cut
-
-sub update_from_form {
-    die "must define 'update_from_form' in Form::Processor::Model subclass";
-}
-
-
-
 
 =item model_validate
 
@@ -234,45 +253,18 @@ add_error method:
 
 The default method does nothing.
 
-=cut
-
-sub model_validate { };
-
-
-
-
 =back
 
 =head1 AUTHOR
 
-Bill Moseley
+Bill Moseley <mods@hank.org>
 
-=head1 LICENSE
+=head1 COPYRIGHT AND LICENSE
 
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
+This software is copyright (c) 2012 by Bill Moseley.
 
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-1;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

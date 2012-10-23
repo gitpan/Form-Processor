@@ -1,38 +1,33 @@
 package Form::Processor::Field::Multiple;
+{
+  $Form::Processor::Field::Multiple::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Select';
-our $VERSION = '0.03';
 
 
-sub init_multiple { 1 } # allow multiple values.
 
-sub init_size { 5 } # default to showing five items if showing in a select list.
+sub init_multiple {1}    # allow multiple values.
+
+sub init_size {5}        # default to showing five items if showing in a select list.
 
 
-=head1 METHODS
-
-=head2 options
-
-This options methods will re-arrange the opitions list to display
-the currently selected items on top.
-
-=cut
 
 sub options {
-    my $self = shift;
+    my $self    = shift;
     my @options = $self->SUPER::options( @_ );
-    my $value = $self->value;
+    my $value   = $self->value;
 
 
     # This places the currently selected options at the top of the list
     # Makes the drop down lists a bit nicer
 
     if ( @options && defined $value ) {
-        my %selected = map { $_ => 1 } ref($value) eq 'ARRAY' ? @$value : ($value);
+        my %selected = map { $_ => 1 } ref( $value ) eq 'ARRAY' ? @$value : ( $value );
 
-        my @out =  grep {   $selected{ $_->{value} }  } @options;
-        push @out, grep {  !$selected{ $_->{value} }  } @options;
+        my @out = grep { $selected{ $_->{value} } } @options;
+        push @out, grep { !$selected{ $_->{value} } } @options;
 
         return wantarray ? @out : \@out;
     }
@@ -41,9 +36,24 @@ sub options {
 }
 
 
+# ABSTRACT: Select one or more options
+
+
+
+1;
+
+
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor::Field::Multiple - Select one or more options
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -70,25 +80,28 @@ This field's widget type is: "select".
 Fields may inherit from other fields.  This field
 inherits from: "Select".
 
-=head1 AUTHORS
+=head1 METHODS
 
-Bill Moseley
+=head2 options
 
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
+This options methods will re-arrange the opitions list to display
+the currently selected items on top.
 
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-1;
-
 

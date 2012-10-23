@@ -1,53 +1,73 @@
-use inc::Module::Install 0.68;
+
+use strict;
+use warnings;
 
 
-name 'Form-Processor';
-all_from 'lib/Form/Processor.pm';
 
-requires 'Rose::Object'       => '0.015';
-requires 'Scalar::Util'       => '1.18';
-requires 'UNIVERSAL::require' => '0';
-requires 'Locale::Maketext'   => '1.09';
-requires 'Module::Find'       => '0.05';
-requires 'Encode'             => '0';
-
-build_requires 'Test::More' => 0;
+use ExtUtils::MakeMaker 6.30;
 
 
-my %recommended = (
 
-    'DateTime'                    => '0.34',
-    'Date::Manip'                 => '5.44',
-    'DateTime::Format::DateManip' => '0.04',
-    'Email::Valid'                => '0.179',
-    'Template'                    => '2.19',
-    'HTML::Tidy'                  => '1.06',
-    'File::Temp'                  => '0.16',
-    'Net::CIDR'                   => '0.11',
-    'Digest::MD5'                 => '2.36',
+my %WriteMakefileArgs = (
+  "ABSTRACT" => "validate and process form data",
+  "AUTHOR" => "Bill Moseley <mods\@hank.org>",
+  "BUILD_REQUIRES" => {
+    "Date::Manip" => 0,
+    "Test::More" => 0
+  },
+  "CONFIGURE_REQUIRES" => {
+    "ExtUtils::MakeMaker" => "6.30"
+  },
+  "DISTNAME" => "Form-Processor",
+  "EXE_FILES" => [],
+  "LICENSE" => "perl",
+  "NAME" => "Form::Processor",
+  "PREREQ_PM" => {
+    "Carp" => 0,
+    "Data::Dumper" => 0,
+    "Data::UUID" => 0,
+    "DateTime" => 0,
+    "DateTime::Format::DateManip" => 0,
+    "Digest::MD5" => 0,
+    "Email::Valid" => 0,
+    "Encode" => 0,
+    "File::Temp" => 0,
+    "HTML::Tidy" => 0,
+    "Locale::Maketext" => 0,
+    "Net::CIDR" => 0,
+    "Rose::Object" => 0,
+    "Rose::Object::MakeMethods::Generic" => 0,
+    "Scalar::Util" => 0,
+    "Template::Parser" => 0,
+    "UNIVERSAL::require" => 0,
+    "base" => 0,
+    "strict" => 0,
+    "warnings" => 0
+  },
+  "VERSION" => "1.122970",
+  "test" => {
+    "TESTS" => "t/*.t"
+  }
 );
 
-recommends $_ => $recommended{$_} for keys %recommended;
 
-sub MY::postamble {
-    my $optional = join ',', keys %recommended;
-    return <<"EOM";
-
-test-missing:
-\texport DEVEL_HIDE_VERBOSE=0; perl -MDevel::Hide=-from:children,$optional -e 'exec("make test")'
-
-test-all:
-\texport TEST_ALL_MODULES=1; make test
-EOM
-
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.56) } ) {
+  my $br = delete $WriteMakefileArgs{BUILD_REQUIRES};
+  my $pp = $WriteMakefileArgs{PREREQ_PM};
+  for my $mod ( keys %$br ) {
+    if ( exists $pp->{$mod} ) {
+      $pp->{$mod} = $br->{$mod} if $br->{$mod} > $pp->{$mod};
+    }
+    else {
+      $pp->{$mod} = $br->{$mod};
+    }
+  }
 }
 
+delete $WriteMakefileArgs{CONFIGURE_REQUIRES}
+  unless eval { ExtUtils::MakeMaker->VERSION(6.52) };
 
-auto_install;
-WriteAll;
+WriteMakefile(%WriteMakefileArgs);
 
-print <<EOF;
-    make test           - test normal environment ignoring recommended modules
-    make test-missing:  - test case of all recommeneded modules missing
-    make test-all       - require all recommended modules
-EOF
+
+

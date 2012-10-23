@@ -1,5 +1,13 @@
 Revision history for Perl extension Form::Processor.
 
+1.122970  2012-10-23 06:31:21 America/Los_Angeles
+    - If just looking at this distribution please look at HTML::FormHandler instead.
+    - Moved to Dist::Zilla for packaging (which is the reason for the jump in version number).
+    - Ran perltidy, and a few PerlCritic updates -- but too many to be safe.
+    - Changed an "Integer" field default length from 8 to 10 digits.
+    - Updated the "CIDR_list" field with updated tests to catch invalid formatted lists.
+
+
 0.31 Wed Jul 11 21:41:02 PDT 2012
     - Fixed missing localization of string.
       RT #78319 reported by Fred Moyer.

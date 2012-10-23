@@ -23,18 +23,18 @@ ok( $form->validate( $good ), 'Good data' );
 
 
 
-my $bad_1 = {
+my $bad_one = {
     optname => 'not req',
     fruit   => 4,
 };
 
 $form->clear;
-ok( !$form->validate( $bad_1 ), 'bad 1' );
+ok( !$form->validate( $bad_one ), 'bad one' );
 
 
-ok( $form->field('fruit')->has_error, 'fruit has error' );
-ok( $form->field('reqname')->has_error, 'reqname has error' );
-ok( !$form->field('optname')->has_error, 'optname has no error' );
+ok( $form->field( 'fruit' )->has_error,    'fruit has error' );
+ok( $form->field( 'reqname' )->has_error,  'reqname has error' );
+ok( !$form->field( 'optname' )->has_error, 'optname has no error' );
 
 $form->clear;
 
@@ -47,25 +47,23 @@ use base 'Form::Processor';
 
 sub profile {
     return {
-        required    => {
-            reqname     => 'Text',
-            fruit       => 'Select',
+        required => {
+            reqname => 'Text',
+            fruit   => 'Select',
         },
-        optional    => {
-            optname     => 'Text',
+        optional => {
+            optname => 'Text',
         },
     };
 }
 
 sub options_fruit {
     return (
-        1   => 'apples',
-        2   => 'oranges',
-        3   => 'kiwi',
+        1 => 'apples',
+        2 => 'oranges',
+        3 => 'kiwi',
     );
 }
-
-
 
 
 

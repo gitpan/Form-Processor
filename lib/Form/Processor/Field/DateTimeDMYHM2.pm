@@ -1,26 +1,29 @@
 package Form::Processor::Field::DateTimeDMYHM2;
+{
+  $Form::Processor::Field::DateTimeDMYHM2::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field';
 use Form::Processor;
 use DateTime;
-our $VERSION = '0.03';
+
 
 # This implements a field made up of sub fields.
 
-sub init_widget { 'Compound' }
+sub init_widget {'Compound'}
 
 
 # This is to keep from reporting missing field
 # for required fields.  Any missing data errors will propogate up.
-sub any_input { 1 }
+sub any_input {1}
 
 
 # Create a sub-form that contains the fields that make up this compound field.
 sub init {
     my $self = shift;
 
-    $self->SUPER::init(@_);
+    $self->SUPER::init( @_ );
 
     my $name = $self->name;
 
@@ -28,17 +31,17 @@ sub init {
 
     $self->sub_form(
         Form::Processor->new(
-            parent_field => $self,  # send all errors to parent field.
-            profile => {
-                optional=> {
-                    day     => 'MonthDay',
-                    month   => 'MonthName',
-                    year    => 'Year',
-                    hour    => 'Hour',
-                    minute  => 'Minute',
+            parent_field => $self,    # send all errors to parent field.
+            profile      => {
+                optional => {
+                    day    => 'MonthDay',
+                    month  => 'MonthName',
+                    year   => 'Year',
+                    hour   => 'Hour',
+                    minute => 'Minute',
                 },
             },
-        )
+            )
     );
 
     return;
@@ -58,14 +61,14 @@ sub validate {
 
 
     # This probably should be done in input_to_value()
-    my %date = map { $_ => $form->field($_)->value } qw/ day month year hour minute /;
+    my %date = map { $_ => $form->field( $_ )->value } qw/ day month year hour minute /;
 
     my $dt;
-    eval {  $dt = DateTime->new( %date, time_zone => 'floating' ) };
+    eval { $dt = DateTime->new( %date, time_zone => 'floating' ) };
 
     if ( $@ ) {
         my $error = $@;
-        $error =~ s! at /.+$!!; # ! vim
+        $error =~ s! at /.+$!!;    # ! vim
         $self->add_error( "Invalid date [_1]", "$error" );
         return;
     }
@@ -100,9 +103,25 @@ sub format_value {
 }
 
 
+# ABSTRACT: DEPRECATED example of a sub-form
+
+
+
+1;
+
+
+
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor::Field::DateTimeDMYHM2 - DEPRECATED example of a sub-form
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -130,26 +149,21 @@ inherits from: "Field".
 
 L<DateTime>
 
-=head1 AUTHORS
-
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-1;
-
-
 

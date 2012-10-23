@@ -1,14 +1,17 @@
 package Form::Processor::Field::HtmlArea;
+{
+  $Form::Processor::Field::HtmlArea::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field::TextArea';
 use HTML::Tidy;
 use File::Temp;
-our $VERSION = '0.03';
+
 
 my $tidy;
 
-sub init_widget { 'textarea' }
+sub init_widget {'textarea'}
 
 sub validate {
     my $field = shift;
@@ -36,6 +39,7 @@ sub validate {
 # Parses config file.  Do it once.
 
 my $tidy_config;
+
 sub tidy {
     my $field = shift;
     $tidy_config ||= $field->init_tidy;
@@ -44,6 +48,7 @@ sub tidy {
 
     $t->ignore( text => qr/DOCTYPE/ );
     $t->ignore( text => qr/missing 'title'/ );
+
     # $t->ignore( type => TIDY_WARNING );
 
     return $t;
@@ -74,9 +79,22 @@ EOF
 }
 
 
+# ABSTRACT: Input HTML in a textarea
+
+
+
+1;
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor::Field::HtmlArea - Input HTML in a textarea
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -103,23 +121,21 @@ inherits from: "Textarea".
 
 L<HTML::Tidy>  L<File::Temp>
 
-=head1 AUTHORS
-
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
 
-
-1;

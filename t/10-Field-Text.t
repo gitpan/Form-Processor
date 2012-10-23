@@ -7,7 +7,6 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Text';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 
@@ -15,33 +14,33 @@ use_ok( $class );
 
 
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'Text',
+    form => undef,
 );
 
 
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 my $string = 'Some text';
 
 $field->input( $string );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 1' );
-is( $field->value, $string, 'is value input string');
+is( $field->value, $string, 'is value input string' );
 
 $field->input( '' );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 2' );
-is( $field->value, undef, 'is value input string');
+is( $field->value, undef, 'is value input string' );
 
-$field->required(1);
+$field->required( 1 );
 $field->validate_field;
 ok( $field->has_error, 'Test for errors 3' );
 
-$field->input('hello');
-$field->required(1);
+$field->input( 'hello' );
+$field->required( 1 );
 $field->validate_field;
 ok( !$field->has_error, 'Test for errors 3' );
 is( $field->value, 'hello', 'Check again' );
@@ -68,8 +67,8 @@ $field->validate_field;
 ok( !$field->has_error, 'Test plenty long enough' );
 
 # Make sure there's an error if passed an array.
-$field->size(undef);
-$field->min_length(undef);
-$field->input([qw/ hello there /]);
+$field->size( undef );
+$field->min_length( undef );
+$field->input( [qw/ hello there /] );
 $field->validate_field;
 ok( $field->has_error, 'Passed array to non-multiple field' );

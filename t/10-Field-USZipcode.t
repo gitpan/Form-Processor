@@ -7,16 +7,15 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::USZipcode';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'USZipcode',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 $field->input( 94610 );
 $field->validate_field;

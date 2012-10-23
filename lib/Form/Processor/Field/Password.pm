@@ -1,15 +1,18 @@
 package Form::Processor::Field::Password;
+{
+  $Form::Processor::Field::Password::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
-our $VERSION = '0.03';
+
 # use Data::Password ();
 #
 
 
-sub init_widget { 'password' }
-sub init_min_length { 6 }
-sub init_password { 1 }
+sub init_widget     {'password'}
+sub init_min_length {6}
+sub init_password   {1}
 
 
 
@@ -44,11 +47,11 @@ sub validate {
     # So hack it.
     my $params = $self->form->params;
 
-    for (qw/ login username / ) {
+    for ( qw/ login username / ) {
         next if $self->name eq $_;
 
         return $self->add_error( 'Password must not match ' . $_ )
-        if $params->{$_} && $params->{$_} eq $value;
+            if $params->{$_} && $params->{$_} eq $value;
     }
 
     return 1;
@@ -56,12 +59,27 @@ sub validate {
 
 }
 
-sub required_message { 'Please enter a password in this field' }
+sub required_message {'Please enter a password in this field'}
 
+
+# ABSTRACT: Input a password
+
+
+
+
+1;
+
+
+__END__
+=pod
 
 =head1 NAME
 
 Form::Processor::Field::Password - Input a password
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -89,25 +107,21 @@ This field's widget type is: "".
 Fields may inherit from other fields.  This field
 inherits from:
 
-=head1 AUTHORS
-
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-
-1;
 

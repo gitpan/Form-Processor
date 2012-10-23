@@ -7,16 +7,15 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Weekday';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'Weekday',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 for ( 0 .. 6 ) {
     $field->input( $_ );

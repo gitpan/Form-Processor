@@ -1,25 +1,21 @@
 use strict;
 use warnings;
-
-use lib './t';
-use MyTest
-    tests   => 2,
-    recommended => [qw/ DateTime /];
+use Test::More tests => 2;
+use DateTime;
 
 
 
-    my $class = 'Form::Processor::Field::DateTimeDMYHM';
+my $class = 'Form::Processor::Field::DateTimeDMYHM';
 
-    my $name = $1 if $class =~ /::([^:]+)$/;
 
-    use_ok( $class );
+use_ok( $class );
 
-    my $field = $class->new(
-        name    => 'test_field',
-        type    => $name,
-        form    => undef,
-    );
+my $field = $class->new(
+    name => 'test_field',
+    type => 'DateTimeDMYHM',
+    form => undef,
+);
 
-    ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 

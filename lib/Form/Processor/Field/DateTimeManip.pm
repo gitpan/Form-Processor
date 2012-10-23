@@ -1,9 +1,12 @@
 package Form::Processor::Field::DateTimeManip;
+{
+  $Form::Processor::Field::DateTimeManip::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field';
 use DateTime::Format::DateManip;
-our $VERSION = '0.03';
+
 
 my %date;
 
@@ -37,14 +40,14 @@ sub validate {
 
 sub input_to_value {
     my $field = shift;
-    $field->value( $field->temp );
+    return $field->value( $field->temp );
 }
 
 sub format_value {
     my $self = shift;
 
     return unless my $value = $self->value;
-    die "Value is not a DateTime" unless $value->isa('DateTime');
+    die "Value is not a DateTime" unless $value->isa( 'DateTime' );
 
     my $d = $value->strftime( '%a, %b %e %Y %l:%M %p %Z' );
 
@@ -54,14 +57,31 @@ sub format_value {
     $d =~ s/\s(\s\d\s\d{4})/$1/;
 
 
-    return ($self->name => $d );
+    return ( $self->name => $d );
 
 }
 
 
+# ABSTRACT: Free-form date/time input
+
+
+
+
+
+
+1;
+
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor::Field::DateTimeManip - Free-form date/time input
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -90,27 +110,21 @@ inherits from: "Field".
 
 L<DateTime>, L<DateTime::Format::DateManip>
 
-=head1 AUTHORS
-
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-
-
-
-1;
 

@@ -7,13 +7,12 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::Phone';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'Phone',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );

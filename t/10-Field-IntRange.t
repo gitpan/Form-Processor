@@ -7,18 +7,17 @@ plan tests => $tests;
 
 my $class = 'Form::Processor::Field::IntRange';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name        => 'test_field',
+    type        => 'IntRange',
+    form        => undef,
     range_start => 30,
     range_end   => 39,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 $field->input( 30 );
 $field->validate_field;

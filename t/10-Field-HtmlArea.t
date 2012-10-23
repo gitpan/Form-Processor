@@ -1,15 +1,11 @@
 use strict;
 use warnings;
-
-use lib './t';
-use MyTest
-    tests   => 5,
-    recommended => [qw/ HTML::Tidy File::Temp /];
-
+use Test::More tests => 5;
+use HTML::Tidy;
+use File::Temp;
 
 
 my $class = 'Form::Processor::Field::HtmlArea';
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 # Mosty to test for bad nesting
 
@@ -31,23 +27,23 @@ my $bad_html = <<'';
 
 
 
-    use_ok( $class );
-    my $field = $class->new(
-        name    => 'test_field',
-        type    => $name,
-        form    => undef,
-    );
+use_ok( $class );
+my $field = $class->new(
+    name => 'test_field',
+    type => 'HtmlArea',
+    form => undef,
+);
 
-    ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
-    $field->input( $good_html );
-    $field->validate_field;
-    ok( !$field->has_error, 'Test for errors 1' );
+$field->input( $good_html );
+$field->validate_field;
+ok( !$field->has_error, 'Test for errors 1' );
 
 
-    $field->input(  $bad_html );
-    $field->validate_field;
-    ok( $field->has_error, 'Test for failure 2' );
-    like( $field->errors->[0], qr!\QWarning: missing </b> before </p>!, 'Check tidy message' );
+$field->input( $bad_html );
+$field->validate_field;
+ok( $field->has_error, 'Test for failure 2' );
+like( $field->errors->[0], qr!\QWarning: missing </b> before </p>!, 'Check tidy message' );
 
 

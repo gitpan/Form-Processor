@@ -1,28 +1,39 @@
 package Form::Processor::Field::OneToTen;
+{
+  $Form::Processor::Field::OneToTen::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field::IntRange';
-our $VERSION = '0.03';
 
+
+
+# ABSTRACT: Field::Processor Field
+
+
+
+sub init_widget      {'radio'}
+sub init_range_start {1}
+sub init_range_end   {10}
+
+
+
+
+
+
+1;
+
+
+__END__
+=pod
 
 =head1 NAME
 
-Form::Processor::Field::OneToTen -- Field::Processor Field
+Form::Processor::Field::OneToTen - Field::Processor Field
 
-=head1 DESCRIPTION
+=head1 VERSION
 
-
-=cut
-
-
-sub init_widget { 'radio' }
-sub init_range_start { 1 }
-sub init_range_end { 10 }
-
-
-=head1 NAME
-
-Form::Processor::Field::OneToTen- DEPRECATED Example custom field
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -47,26 +58,27 @@ This field's widget type is: "radio".
 Fields may inherit from other fields.  This field
 inherits from: "IntRange".
 
-=head1 AUTHORS
+=head1 DESCRIPTION
 
-Bill Moseley
+=head1 NAME
 
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
+Form::Processor::Field::OneToTen- DEPRECATED Example custom field
 
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-
-
-1;
 

@@ -1,13 +1,16 @@
 package Form::Processor::Field::Email;
+{
+  $Form::Processor::Field::Email::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
 use Email::Valid;
-our $VERSION = '0.05';
 
 
 
-sub init_size { 254 } # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
+
+sub init_size {254}    # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
 
 sub validate {
     my $self = shift;
@@ -17,7 +20,7 @@ sub validate {
 
     my $email = Email::Valid->address( $self->input );
 
-    return $self->add_error('Email should be of the format [_1]', 'someuser@example.com')
+    return $self->add_error( 'Email should be of the format [_1]', 'someuser@example.com' )
         unless $email;
 
     $self->input( lc $email );
@@ -26,9 +29,23 @@ sub validate {
 }
 
 
+# ABSTRACT: Validates email uisng Email::Valid
+
+
+
+1;
+
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor::Field::Email - Validates email uisng Email::Valid
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -63,24 +80,21 @@ inherits from: "Field".
 
 L<Email::Valid>
 
-=head1 AUTHORS
-
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-1;
 

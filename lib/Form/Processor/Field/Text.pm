@@ -1,23 +1,26 @@
 package Form::Processor::Field::Text;
+{
+  $Form::Processor::Field::Text::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field';
-our $VERSION = '0.04';
+
 
 
 use Rose::Object::MakeMethods::Generic (
     scalar => [
-        min_length      => { interface => 'get_set_init' },
-        size            => { interface => 'get_set_init' },
+        min_length => { interface => 'get_set_init' },
+        size       => { interface => 'get_set_init' },
     ],
 );
 
-sub init_size { 2500 }  # new in .20 as a sanity check
-sub init_min_length { 0 }
+sub init_size       {return 2500}    # new in .20 as a sanity check
+sub init_min_length {return 0}
 
 
 
-sub init_widget { 'text' }
+sub init_widget {return 'text'}
 
 sub validate {
     my $field = shift;
@@ -27,7 +30,7 @@ sub validate {
     my $value = $field->input;
 
 
-    if ( my $size = $field->size  ) {
+    if ( my $size = $field->size ) {
 
         my $value = $field->input;
 
@@ -37,7 +40,7 @@ sub validate {
     }
 
     # Check for min length
-    if ( my $size = $field->min_length  ) {
+    if ( my $size = $field->min_length ) {
 
         return $field->add_error( 'Input must be at least [quant,_1,character]. You submitted [_2]', $size, length $value )
             if length $value < $size;
@@ -48,9 +51,24 @@ sub validate {
 
 }
 
+# ABSTRACT: A simple text entry field
+
+
+
+
+1;
+
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor::Field::Text - A simple text entry field
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -85,8 +103,6 @@ class and sets additional validation, including size.
 As of L<Form::Processor> version .20 (0.04 for this class) the default has
 changed from zero to 2500.
 
-
-
 =head2 min_length [integer]
 
 This integer value, if non-zero, defines the minimum number of characters that must 
@@ -94,26 +110,21 @@ be entered.
 
 Default to zero characters.
 
-
-=head1 AUTHORS
-
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-
-1;
 

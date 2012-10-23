@@ -1,8 +1,13 @@
+# ABSTRACT: ** Please provide abstract **
+
 package Form::Processor::Field::Username;
+{
+  $Form::Processor::Field::Username::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base 'Form::Processor::Field::Text';
-our $VERSION = '0.03';
+
 
 
 sub validate {
@@ -12,19 +17,33 @@ sub validate {
 
     my $input = $self->input || '';
 
-    return $self->add_error('Usernames must not contain spaces')
+    return $self->add_error( 'Usernames must not contain spaces' )
         if $input =~ /\s/;
 
-    return $self->add_error('Usernames must be at least 4 characters long')
+    return $self->add_error( 'Usernames must be at least 4 characters long' )
         if length $input < 4;
 
     return 1;
 }
 
 
+
+
+
+
+1;
+
+
+__END__
+=pod
+
 =head1 NAME
 
-Form::Processor::Field::Username
+Form::Processor::Field::Username - ** Please provide abstract **
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -47,26 +66,25 @@ This field's widget type is: "text".
 Fields may inherit from other fields.  This field
 inherits from: "Text".
 
-=head1 AUTHORS
+=head1 NAME
 
-Bill Moseley
-
-=head1 COPYRIGHT
-
-See L<Form::Processor> for copyright.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
+Form::Processor::Field::Username
 
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-
-
-
-1;
 

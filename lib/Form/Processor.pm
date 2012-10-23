@@ -1,14 +1,17 @@
 package Form::Processor;
+{
+  $Form::Processor::VERSION = '1.122970';
+}
 use strict;
 use warnings;
 use base qw/ Rose::Object  Form::Processor::Model /;
 use Carp;
 use UNIVERSAL::require;
 use Locale::Maketext;
-use Form::Processor::I18N;  # base class for language files
+use Form::Processor::I18N;    # base class for language files
 use Scalar::Util;
 
-our $VERSION = '0.31';
+
 
 
 # Define basic instance interface
@@ -16,24 +19,24 @@ our $VERSION = '0.31';
 use Rose::Object::MakeMethods::Generic (
 
     boolean => [ qw(
-        ran_validation
-        validated
-        verbose
-        readonly
-        use_existing_values
-    )],
+            ran_validation
+            validated
+            verbose
+            readonly
+            use_existing_values
+            ) ],
 
 
     scalar => [
-        item_id         => {},  # Can't init from item->id because of circular references
-        errors          => {},  # total errors
-        name            => { interface => 'get_set_init' },  # form name (in case using multiple forms?)
-        updated_or_created => {},  # silly message.
-        name_prefix     => {},  # prefix used on all name fields.
-        init_object     => {},  # provides a way to init from another object.
-        user_data       => {},  # Just a place to store user data.
-        language_handle => { interface => 'get_set_init' },  # Locale::Maketext language handle
-        field_counter   => { interface => 'get_set_init' },  # For numbering fields.
+        item_id            => {},                              # Can't init from item->id because of circular references
+        errors             => {},                              # total errors
+        name               => { interface => 'get_set_init' }, # form name (in case using multiple forms?)
+        updated_or_created => {},                              # silly message.
+        name_prefix        => {},                              # prefix used on all name fields.
+        init_object        => {},                              # provides a way to init from another object.
+        user_data          => {},                              # Just a place to store user data.
+        language_handle    => { interface => 'get_set_init' }, # Locale::Maketext language handle
+        field_counter      => { interface => 'get_set_init' }, # For numbering fields.
 
         # A field can be a form, and this is a reference to that field
         # Causes all the sub-form error messages to be sent to the parent field.
@@ -43,33 +46,652 @@ use Rose::Object::MakeMethods::Generic (
 
 
     hash => [
-        # Stores CGI parameters -- init will populate hash from object
-        param           => { hash_key  => 'params' },
-        params          => { interface => 'get_set_init' },
-        reset_params    => { interface => 'reset', hash_key => 'params' },
-        delete_param    => { interface => 'delete', hash_key => 'params' },
 
-        profile         => {},
+        # Stores CGI parameters -- init will populate hash from object
+        param        => { hash_key  => 'params' },
+        params       => { interface => 'get_set_init' },
+        reset_params => { interface => 'reset', hash_key => 'params' },
+        delete_param => { interface => 'delete', hash_key => 'params' },
+
+        profile => {},
 
     ],
 
 
     array => [
-        fields          => {},
-        clear_fields    => { interface => 'clear', hash_key => 'fields' },
-        add_field       => { interface => 'push', hash_key => 'fields' },
+        fields       => {},
+        clear_fields => { interface => 'clear', hash_key => 'fields' },
+        add_field    => { interface => 'push', hash_key => 'fields' },
 
-        requires        => {},
-        clear_requires  => { interface => 'clear', hash_key => 'requires' },
-        add_requires    => { interface => 'push', hash_key => 'requires' },
+        requires       => {},
+        clear_requires => { interface => 'clear', hash_key => 'requires' },
+        add_requires   => { interface => 'push', hash_key => 'requires' },
 
     ],
 );
 
 
+# ABSTRACT: validate and process form data
+
+
+sub init_name {
+    my $form = shift;
+    return 'form' . int( rand 1000 );
+}
+
+
+# Used by set_order call.  See Field.pm
+sub init_field_counter {1}
+
+
+
+
+
+sub new {
+    my $class = shift;
+
+    my $self = bless {}, $class;
+
+    return unless $self->init( @_ );
+
+    $self->dump_fields if $self->verbose;
+
+    return $self;
+}
+
+
+sub load_form {
+    my $class = shift;
+
+    my $self = bless {}, $class;
+
+    $self->SUPER::init( @_ );    # load passed in parameters
+
+    $self->build_form;           # create the form fields
+
+    return;
+}
+
+
+
+
+sub clear {
+    my $self = shift;
+    $self->validated( 0 );
+    $self->ran_validation( 0 );
+    $self->errors( 0 );
+    $self->clear_values;
+    $self->updated_or_created( undef );
+}
+
+
+
+
+sub init {
+    my $self = shift;
+
+
+    # Deal with passing a single value to new()
+    # which would be the item id or item object
+
+    if ( 1 == @_ ) {
+        my $id = shift;
+
+        if ( ref $id ) {    # passed an existing item $$$ FIXME use Scalar::Util::blessed
+            @_ = ( item => $id, item_id => $id->id );
+        } else {
+            @_ = ( item_id => $id );
+        }
+    }
+
+
+    $self->SUPER::init( @_ );    # load passed in parameters
+
+    $self->build_form;           # create the form fields
+
+
+    # if an item id passed in try and load
+    # and return false if the item is not loaded.
+    # This just helps in validating the id passed in the controller
+
+    return if defined $self->item_id && !$self->item;
+
+
+
+    $self->init_from_object;     # load values from object, if item exists;
+
+    $self->load_options;         # load options -- need to do after loading item
+
+    return 1;
+}
+
+
+
+sub build_form {
+    my $self = shift;
+
+    my $profile = $self->profile;
+
+    croak "Please define 'profile' method in subclass" unless ref $profile eq 'HASH';
+
+
+    ### $$$ look at all keys in profile and allow keys to be Field names.
+
+
+    for my $group ( qw/ required optional / ) {
+        my $required = 'required' eq $group;
+
+        $self->_build_fields( $profile->{$group}, $required );
+
+        my $auto_fields = $profile->{ 'auto_' . $group } || next;
+
+        $self->_build_fields( $auto_fields, $required );
+    }
+}
+
+
+sub load_options {
+    my $self = shift;
+
+    $self->load_field_options( $_ ) for $self->fields;
+}
+
+# Why are the options not loaded via the field?  Because the Model class
+# overrides this class (Form::Processor), not a field class.  Makes is a bit
+# harder to override the individual field classes that have options.  This
+# probably needs addressing.
+
+sub load_field_options {
+    my ( $self, $field, @options ) = @_;
+
+    # Populate the field?
+    return unless $field->can( 'options' );
+
+
+    my $method = 'options_' . $field->name;
+
+    @options = $self->can( $method )
+        ? $self->$method( $field )
+        : $self->lookup_options( $field ) unless @options;
+
+    return unless @options;
+
+
+    @options = @{ $options[0] } if ref $options[0];
+
+    croak "Options array must contain an even number of elements for field " . $field->name
+        if @options % 2;
+
+    my @opts;
+    push @opts, { value => shift @options, label => shift @options }
+        while @options;
+
+    $field->options( \@opts ) if @opts;
+
+}
+
+
+sub dump_fields {
+    my $self = shift;
+    for my $field ( $self->fields ) {
+        $field->dump;
+        $field->form->dump_fields if $field->can( 'form' );
+    }
+}
+
+
+# create fields.
+
+sub _build_fields {
+    my ( $self, $fields, $required ) = @_;
+
+    return unless $fields;
+
+    if ( ref( $fields ) eq 'ARRAY' ) {
+        for ( @$fields ) {
+            my $field = $self->make_field( $_, 'Auto' ) || next;
+            $field->required( $required );
+            $self->add_field( $field );
+        }
+
+        return;
+    }
+
+    # otherwise, defined field types
+
+    while ( my ( $name, $type ) = each %$fields ) {
+        my $field = $self->make_field( $name, $type ) || next;
+
+        $field->required( $required );
+        $self->add_field( $field );
+    }
+}
+
+
+
+sub make_field {
+    my ( $self, $name, $type_data ) = @_;
+
+    croak 'Must pass name and type to make_field'
+        unless $name && $type_data;
+
+    $type_data = { type => $type_data } unless ref $type_data eq 'HASH';
+
+    # Grab field type and load the class
+
+    my $type = $type_data->{type} || die 'Failed to provide field type to make_field()';
+    $type = $self->guess_field_type( $name ) if $type eq 'Auto';
+
+    croak "Failed to set field type for field [$name]" unless $type;
+
+    my $class = $type =~ s/^\+//
+        ? $type
+        : 'Form::Processor::Field::' . $type;
+
+    $class->require or die "Failed to load field '$type': $UNIVERSAL::require::ERROR";
+
+
+    # Create instance
+
+    $type_data->{name} = $self->name_prefix
+        ? $self->name_prefix . '.' . $name
+        : $name;
+
+    $type_data->{form} = $self;
+
+
+    my $field = $class->new( %{$type_data} );
+
+    # Define default field order
+    unless ( $field->order ) {
+        my $fields = $self->fields;
+        $field->order( $fields ? scalar @{ $self->fields } + 1 : 1 );
+    }
+
+
+    return $field;
+
+}
+
+
+
+
+
+
+sub init_from_object {
+    my $self = shift;
+
+
+    my $item = $self->init_object || $self->item || return;
+
+    for my $field ( $self->fields ) {
+
+        my @values;
+
+        my $method = 'init_value_' . $field->name;
+        if ( $self->can( $method ) ) {
+            @values = $self->$method( $field, $item );
+
+        } else {
+            @values = $self->init_value( $field, $item );
+        }
+
+        my $value = @values > 1 ? \@values : shift @values;
+
+        # Handy for later compare
+        $field->init_value( $value );
+        $field->value( $value );
+    }
+
+}
+
+
+
+
+
+
+sub init_params {
+    my $form = shift;
+    my %hash;
+    for my $field ( $form->fields ) {
+
+        next if $field->writeonly;
+
+        my %params = $field->format_value;
+
+        while ( my ( $k, $v ) = each( %params ) ) {
+            $hash{$k} = $v if defined $v;
+        }
+    }
+
+    return \%hash;
+}
+
+
+sub clear_values {
+    my $form = shift;
+
+    for ( $form->fields ) {
+        $_->value( undef );
+        $_->input( undef );
+    }
+    $form->reset_params;
+}
+
+
+
+sub fif {
+    my $self = shift;
+
+    my %hash = $self->params;
+
+    # remove password fields
+    for my $field ( $self->fields ) {
+        delete $hash{ $field->name } if $field->password;
+    }
+    return \%hash;
+}
+
+
+sub sorted_fields {
+    my $form = shift;
+
+    my @fields = sort { $a->order <=> $b->order } $form->fields;
+
+    return wantarray ? @fields : \@fields;
+}
+
+
+
+
+sub field {
+    my ( $self, $name, $no_die ) = @_;
+
+    $name = $self->name_prefix . '.' . $name if $self->name_prefix;
+
+    for my $field ( $self->fields ) {
+        return $field if $field->name eq $name;
+    }
+
+    return if $no_die;
+
+    croak "Failed to lookup field name [$name] in form [$self]";
+}
+
+
+sub exists {
+    my ( $self, $name ) = @_;
+    return $self->field( $name, 1 );
+}
+
+
+
+sub init_language_handle {
+    my $self = shift;
+
+    my $lh = $ENV{LANGUAGE_HANDLE} || Form::Processor::I18N->get_handle ||
+        die "Failed call to Text::Maketext->get_handle";
+
+    return $lh;
+
+}
+
+
+
+
+
+
+sub validate {
+    my ( $self, $params ) = @_;
+
+    $params ||= {};
+
+
+    return $self->validated if $self->ran_validation;
+
+    # Set params -- so can be used by fif later.
+    $self->params( $params );
+
+    $self->set_existing_values if $self->use_existing_values;
+
+    $self->set_dependency;    # set required dependencies
+
+
+    # First pass: trim values and move to "input" slot
+
+    $_->input( $_->trim_value( $params->{ $_->full_name } ) )
+        for $self->fields;
+
+
+
+    # Second pass: Validate each field and "inflate" input -> value.
+
+    for my $field ( $self->fields ) {
+        next if $field->clear;    # Skip validation
+        $field->validate_field;
+    }
+
+
+    # Third pass: call local validation for all *defined* values.
+
+    for my $field ( $self->fields ) {
+        next if $field->clear;    # Skip validation
+        next unless defined $field->value;
+
+        # these methods have access to the inflated values
+        my $method = 'validate_' . $field->name;
+        $self->$method( $field ) if $self->can( $method );
+    }
+
+
+    # only call if no errors?  Only call on validated fields?
+    $self->cross_validate( $params );
+
+
+    # model specific validation (e.g. validation that requires database lookups)
+    $self->model_validate;
+
+
+    $self->clear_dependency;
+
+    # should this be an init_errors method?
+    my $errors;
+    for ( $self->fields ) {
+        $errors++ if $_->errors;
+    }
+
+    $self->errors( $errors );
+    $self->ran_validation( 1 );
+    $self->validated( !$errors );
+
+    $self->dump_validated if $self->verbose;
+
+    return $self->validated;
+
+
+}
+
+sub dump_validated {
+    my $self = shift;
+    warn "-- validated --\n";
+    warn $_->name, ": ", ( $_->errors ? join( ' | ', $_->errors ) : 'validated!' ), "\n"
+        for $self->fields;
+}
+
+
+
+sub cross_validate {1}
+
+
+# here we get a bit more iffy.
+# Remember, this is before white space is trimmed.
+# and before any validation.
+
+sub set_dependency {
+    my $self = shift;
+
+    my $depends = $self->profile->{dependency} || return;
+
+    my $params = $self->params;
+
+    for my $group ( @$depends ) {
+        next if @$group < 2;
+
+        # process a group of fields
+
+        for my $name ( @$group ) {
+
+
+            # is there a value?
+            my $value = $params->{$name};
+
+            next unless defined $value;
+
+
+            # The exception is a boolean can be zero which we count as not set.
+            # This is to allow requiring a field when a boolean is true.
+            next if $self->field( $name )->type eq 'Boolean' && $value == 0;
+
+
+            if ( ref $value ) {
+                next unless grep {/\S/} @$value;    # at least one value is non-blank
+            } else {
+                next unless $value =~ /\S/;
+            }
+
+
+            # one field was found non-blank, so set all to required
+            for ( @$group ) {
+                my $field = $self->field( $_ );
+                next unless $field && !$field->required;
+                $self->add_requires( $field );      # save for clearing later.
+                $field->required( 1 );
+            }
+            last;
+        }
+    }
+}
+
+sub clear_dependency {
+    my $self = shift;
+
+    $_->required( 0 ) for $self->requires;
+    $self->clear_requires;
+}
+
+
+
+
+
+sub has_error {
+    my $self = shift;
+    return $self->ran_validation && !$self->validated;
+}
+
+sub has_errors {
+    for ( shift->fields ) {
+        return 1 if $_->errors;
+    }
+    return 0;
+}
+
+
+sub error_fields { return grep { $_->errors } shift->sorted_fields }
+
+
+sub error_field_names { return map { $_->name } shift->error_fields }
+
+
+
+sub required_text {
+    my ( $self, $name ) = @_;
+    return 'unknown' unless $name;
+    return 'unknown' unless my $field = $self->field( $name );
+    return $field->required_text;
+}
+
+
+sub value {
+    my ( $form, $name, $no_die ) = @_;
+    my $field = $form->field( $name, $no_die ) || return;
+    return $field->value;
+}
+
+
+
+sub value_changed {
+    my ( $self, $name ) = @_;
+    croak "value_chagned requires a field name" unless $name;
+
+    my $field = ref( $name ) ? $name : $self->field( $name );
+    croak "Failed to lookup field name [$name]\n" unless $field;
+
+    return $field->value_changed;
+}
+
+
+
+sub set_existing_values {
+    my $form = shift;
+
+    my $params = $form->params;
+
+    for my $field ( $form->fields ) {
+
+        # Does the field insist that the value must be provided?
+        next if $field->must_submit;
+
+        my $name = $field->name;
+        next if exists $params->{$name};
+
+        next if $field->writeonly;
+
+        my %hash_params = $field->format_value;
+
+        $form->params( %hash_params );
+    }
+}
+
+
+
+
+
+sub uuid {
+    my $form = shift;
+    require Data::UUID;
+    my $uuid = Data::UUID->new->create_str;
+    return qq[<input type="hidden" name="form_uuid" value="$uuid">];
+}
+
+
+
+sub parent_field {
+    my $self = shift;
+    return Scalar::Util::weaken( $self->{parent_field} = shift ) if ( @_ );
+    return $self->{parent_field};
+}
+
+
+
+
+
+1;
+
+
+
+
+
+
+__END__
+=pod
+
 =head1 NAME
 
 Form::Processor - validate and process form data
+
+=head1 VERSION
+
+version 1.122970
 
 =head1 SYNOPSIS
 
@@ -96,9 +718,7 @@ an example:
         $c->stash->{form} = $form;
     }
 
-
 The above form class might then look like this:
-
 
     package MyApplication::Form::User;
     use strict;
@@ -155,8 +775,6 @@ Or when you need a quick, small form do this in a controller:
         },
     );
 
-
-
 =head1 DESCRIPTION
 
 [Docs under construction.  The docs are probably, well, less concise then they could be.
@@ -164,7 +782,6 @@ Editors are welcome..]
 
 Note: Please see L<HTML::FormHandler> for a well-supported, Moose-based
 derivation of L<Form::Processor>.
-
 
 This is a class for working with forms.  A form acts as a layer between your
 internal data representation (such as a database) and the outside world (such
@@ -202,7 +819,6 @@ focuses more on moving data between the data store to the form that from the
 form to html.  It's recommended that you look over Rose::HTML::Objects if not
 already done so.
 
-
 =head2 The Form
 
 As shown above in the synopsis, a "form" class is where a collection of
@@ -239,9 +855,7 @@ can be written in a very clean and generic way (i.e. no extra code needed to
 populate the form widgets).  It also makes it easy to populate forms in a
 number of different ways in your application, which an be handy.
 
-
 =head2 Compound Fields
-
 
 Rose::HTML::Objects is really nice (you should take a look), and one of its
 features is it handles compound fields -- fields that are made up of other
@@ -254,7 +868,6 @@ be another form made up of multiple fields.
 
 To help with this there's a "name_prefix" form setting that can be used to help
 with nested forms.
-
 
 =head2 A form's model class
 
@@ -307,7 +920,6 @@ is used to load a module by that name:
         },
     };
 
-
 Type "Text" loads the Form::Processor::Field::Text module and likewise, type
 'Integer' loads Form::Processor::Field::Integer.
 
@@ -356,17 +968,6 @@ It's also prefixed to fields when asked for the field's id.
 The default is form + a one to three digit random number.
 
     sub name { 'useform' }
-
-=cut
-
-sub init_name {
-    my $form = shift;
-    return 'form' . int( rand 1000 );
-}
-
-
-# Used by set_order call.  See Field.pm
-sub init_field_counter { 1 }
 
 =item profile
 
@@ -435,10 +1036,7 @@ Is basically:
     $field->active_column( 'is_active' );
     $form->add_field( $field );
 
-
-
 =head2 Possible profile keys
-
 
 =over 4
 
@@ -517,7 +1115,6 @@ This is not implemented yet, but something like:
 
     map { $_ => 'Auto' } $form->object_class->columns;
 
-
 =item dependency
 
 This is an array of arrays of field names.  During validation if any of the
@@ -548,7 +1145,6 @@ This should work like DFV's dependency_groups profile entry.
 
 This class doesn't have DFV's "dependencies" option at this time.
 
-
 =item unique
 
 This is an array ref field names that should be unique in the data
@@ -556,12 +1152,7 @@ base.  This feature depends on the model class being used.
 
 =back
 
-=cut
-
-
-
 =item new PARAMS
-
 
 New creates a new form object.  The constructor takes name/value pairs:
 
@@ -609,11 +1200,9 @@ An existing object (i.e. the object that id points to).  This can
 be passed in to the new constructor, but typically it's loaded
 by the form's model class by its init_item method.
 
-
 =item name
 
 Name of the form.  See the L<name> method above.
-
 
 =item name_prefix
 
@@ -634,7 +1223,6 @@ form class, but can be specified in the constructor, for example,
 for small forms that do not use a form class (and specify the profile
 directly in the constructor -- see profile below).
 
-
 =item profile
 
 This is useful for very short forms where you do not wish to define a subclass
@@ -652,7 +1240,6 @@ for your form.
         },
     );
 
-
 =item init_object
 
 If init_object is supplied then it will be used instead of item
@@ -663,8 +1250,6 @@ a similar but different object than the one the form is creating.
 
 See init_from_object below.
 
-
-
 =back
 
 The new() method will return false if the init() method returns false.
@@ -674,21 +1259,6 @@ init() method in your form class, but make sure you call
     return unless $self->SUPER::init(@_);
 
 from your method.
-
-
-=cut
-
-sub new {
-    my $class = shift;
-
-    my $self = bless {}, $class;
-
-    return unless $self->init( @_ );
-
-    $self->dump_fields if $self->verbose;
-
-    return $self;
-}
 
 =item load_form
 
@@ -703,40 +1273,11 @@ form fields via the profile.  Any fields your form dynamically creates
 outside of of the form's C<profile> method are not loaded.  Options are not loaded
 as this may require reading from a data store which may not be available.
 
-=cut
-
-sub load_form {
-    my $class = shift;
-
-    my $self = bless {}, $class;
-
-    $self->SUPER::init(@_);     # load passed in parameters
-
-    $self->build_form;          # create the form fields
-
-    return;
-}
-
-
-
 =item clear
 
 Clears out state information on the form.  Normally this does not need to be
 called by external code.  An exception might be if the form stays in memory
 between uses -- but that's not the idea quite yet
-
-=cut
-
-sub clear {
-    my $self = shift;
-    $self->validated(0);
-    $self->ran_validation(0);
-    $self->errors(0);
-    $self->clear_values;
-    $self->updated_or_created(undef);
-}
-
-
 
 =item init
 
@@ -765,7 +1306,6 @@ validating the $id in the calling code (e.g. in a controller method).
 Note that if $id is undefined then new() will still return true.  This allows the
 same code to be used for both create and update forms.
 
-
 The init method calls the build_form method which reads the profile and creates
 the field objects.  See that method for its magic.
 
@@ -787,48 +1327,6 @@ class relationships.  See load_options below.
 Again, this method will return false if an item_id is supplied and an
 item cannot be loaded from that id.
 
-
-=cut
-
-sub init {
-    my $self = shift;
-
-
-    # Deal with passing a single value to new()
-    # which would be the item id or item object
-
-    if ( 1 == @_ ) {
-        my $id = shift;
-
-        if ( ref $id ) { # passed an existing item $$$ FIXME use Scalar::Util::blessed
-            @_ = ( item => $id, item_id => $id->id );
-        } else {
-            @_ = ( item_id => $id );
-        }
-    }
-
-
-    $self->SUPER::init(@_);     # load passed in parameters
-
-    $self->build_form;          # create the form fields
-
-
-    # if an item id passed in try and load
-    # and return false if the item is not loaded.
-    # This just helps in validating the id passed in the controller
-
-    return if defined $self->item_id && !$self->item;
-
-
-
-    $self->init_from_object;    # load values from object, if item exists;
-
-    $self->load_options;        # load options -- need to do after loading item
-
-    return 1;
-}
-
-
 =item build_form
 
 This parses the form profile and creates the individual
@@ -842,35 +1340,9 @@ might do that if your field names are labeled with their type --
 "event_time" "age_int", etc.  Although that would be an odd thing
 to do.
 
-
 The above can also return an array reference.
 
-=cut
-
-sub build_form {
-    my $self = shift;
-
-    my $profile = $self->profile;
-
-    croak "Please define 'profile' method in subclass" unless ref $profile eq 'HASH';
-
-
-    ### $$$ look at all keys in profile and allow keys to be Field names.
-
-
-    for my $group ( qw/ required optional / ) {
-        my $required = 'required' eq $group;
-
-        $self->_build_fields( $profile->{$group}, $required );
-
-        my $auto_fields = $profile->{ 'auto_' . $group } || next;
-
-        $self->_build_fields( $auto_fields, $required );
-    }
-}
-
 =item load_options
-
 
 For all fields, if the field is a "Select" or "Multiple" (i.e. has an "options"
 method) then will call "options_$field_nane" if that method exists, otherwise
@@ -894,90 +1366,9 @@ Here's an example of a method defined in your form's class to populate the
         );
     }
 
-=cut
-
-sub load_options {
-    my $self = shift;
-
-    $self->load_field_options( $_ ) for $self->fields;
-}
-
-# Why are the options not loaded via the field?  Because the Model class
-# overrides this class (Form::Processor), not a field class.  Makes is a bit
-# harder to override the individual field classes that have options.  This
-# probably needs addressing.
-
-sub load_field_options {
-    my ( $self, $field, @options ) = @_;
-
-    # Populate the field?
-    return unless $field->can('options');
-
-
-    my $method = 'options_' . $field->name;
-
-    @options = $self->can( $method )
-            ? $self->$method( $field )
-            : $self->lookup_options( $field ) unless @options;
-
-    return unless @options;
-
-
-    @options = @{$options[0]} if ref $options[0];
-
-    croak "Options array must contain an even number of elements for field " . $field->name
-        if @options % 2;
-
-    my @opts;
-    push @opts, { value => shift @options, label => shift @options }
-        while @options;
-
-    $field->options( \@opts ) if @opts;
-
-}
-
 =item dump_fields
 
 Dumps the fields of the form.  For debugging.
-
-=cut
-
-sub dump_fields {
-    my $self = shift;
-    for my $field ( $self->fields ) {
-        $field->dump;
-        $field->form->dump_fields if $field->can('form');
-    }
-}
-
-
-# create fields.
-
-sub _build_fields {
-    my ( $self, $fields, $required ) = @_;
-
-    return unless $fields;
-
-    if ( ref($fields) eq 'ARRAY' ) {
-        for ( @$fields ) {
-            my $field = $self->make_field( $_, 'Auto' ) || next;
-            $field->required( $required );
-            $self->add_field( $field );
-        }
-
-        return;
-    }
-
-    # otherwise, defined field types
-
-    while ( my( $name, $type ) = each %$fields ) {
-        my $field = $self->make_field( $name, $type ) || next;
-
-        $field->required( $required );
-        $self->add_field( $field );
-    }
-}
-
 
 =item make_field
 
@@ -994,7 +1385,6 @@ If the second parameter is a scalar it's taken as the field's type
 If the second parameter is a hash reference then the field type is determined
 from the required "type" value (i.e. C<$type->{type}> ).
 
-
 The fields are assumed to be in the Form::Processor::Field name
 space.  If you want to explicitly list the field's package prefix it
 with a plus sign:
@@ -1003,57 +1393,6 @@ with a plus sign:
         name    => 'Text',  # Form::Processor::Field::Text
         foo     => '+My::Field::Foo',
     },
-
-
-
-=cut
-
-sub make_field {
-    my ( $self, $name, $type_data ) = @_;
-
-    croak 'Must pass name and type to make_field'
-        unless $name && $type_data;
-
-    $type_data = { type => $type_data } unless ref $type_data eq 'HASH';
-
-    # Grab field type and load the class
-
-    my $type = $type_data->{type} || die 'Failed to provide field type to make_field()';
-    $type = $self->guess_field_type( $name ) if $type eq 'Auto';
-
-    croak "Failed to set field type for field [$name]" unless $type;
-
-    my $class = $type =~ s/^\+//
-        ? $type
-        : 'Form::Processor::Field::' . $type;
-
-    $class->require or die "Failed to load field '$type': $UNIVERSAL::require::ERROR";
-
-
-    # Create instance
-
-    $type_data->{name} = $self->name_prefix
-        ? $self->name_prefix . '.' . $name
-        : $name;
-
-    $type_data->{form} = $self;
-
-
-    my $field = $class->new( %{$type_data} );
-
-    # Define default field order
-    unless ( $field->order ) {
-        my $fields = $self->fields;
-        $field->order( $fields ? scalar @{ $self->fields } + 1 : 1 );
-    }
-
-
-    return $field;
-
-}
-
-
-
 
 =item init_from_object
 
@@ -1068,40 +1407,6 @@ return a list of objects (e.g. has_many relationships).
 
 If a method "init_value_$name" is found then that method is called instead.
 This allows overriding specific fields in your form class.
-
-=cut
-
-
-sub init_from_object {
-    my $self = shift;
-
-
-    my $item = $self->init_object || $self->item || return;
-
-    for my $field ( $self->fields ) {
-
-        my @values;
-
-        my $method = 'init_value_' . $field->name;
-        if ( $self->can( $method ) ) {
-            @values = $self->$method( $field, $item );
-
-        } else {
-            @values = $self->init_value( $field, $item );
-        }
-
-        my $value = @values > 1 ? \@values : shift @values;
-
-        # Handy for later compare
-        $field->init_value( $value );
-        $field->value( $value );
-    }
-
-}
-
-
-
-
 
 =item params
 
@@ -1122,78 +1427,19 @@ This method is called automatically when $form->params and params
 are not defiend.  You may need to call this method directly if $form->item
 changes while the form object is in memory to force a refresh of params.
 
-=cut
-
-sub init_params {
-    my $form = shift;
-    my %hash;
-    for my $field ( $form->fields ) {
-
-        next if $field->writeonly;
-
-        my %params = $field->format_value;
-
-        while ( my( $k, $v ) = each ( %params ) ) {
-            $hash{ $k } = $v if defined $v;
-        }
-    }
-
-    return \%hash;
-}
-
 =item clear
 
 Clears the internal and external values of the form
-
-=cut
-
-sub clear_values {
-    my $form = shift;
-
-    for ( $form->fields ) {
-        $_->value( undef );
-        $_->input( undef );
-    }
-    $form->reset_params;
-}
 
 =item fif -- "fill in form"
 
 Returns a hash of values suitable for use with HTML::FillInForm.
 It's a copy of $self->params with any passowrd fields removed.
 
-=cut
-
-
-sub fif {
-    my $self = shift;
-
-    my %hash = $self->params;
-
-    # remove password fields
-    for my $field ( $self->fields ) {
-        delete $hash{ $field->name } if $field->password;
-    }
-    return \%hash;
-}
-
 =item sorted_fields
 
 Calls fields and returns them in sorted order by their "order"
 value.
-
-
-=cut
-
-sub sorted_fields {
-    my $form = shift;
-
-    my @fields = sort { $a->order <=> $b->order } $form->fields;
-
-    return wantarray ? @fields : \@fields;
-}
-
-
 
 =item field NAME
 
@@ -1204,33 +1450,9 @@ dies on not found.  Useful for entering the wrong field.
 
 Pass a second true value to not die on errors.
 
-=cut
-
-sub field {
-    my ( $self, $name, $no_die ) = @_;
-
-    $name = $self->name_prefix . '.' . $name if $self->name_prefix;
-
-    for my $field ( $self->fields ) {
-        return $field if $field->name eq $name;
-    }
-
-    return if $no_die;
-
-    croak "Failed to lookup field name [$name] in form [$self]";
-}
-
 =item exists
 
 Returns true (the field) if the field exists
-
-=cut
-
-sub exists {
-    my ($self, $name) = @_;
-    return $self->field( $name, 1 );
-}
-
 
 =item language_handle
 
@@ -1245,22 +1467,6 @@ common use might be to provide an application-wide language handler.
 
 The language handler can be passed in when creating your form instance
 or set after the object is created.
-
-=cut
-
-sub init_language_handle {
-    my $self = shift;
-
-    my $lh = $ENV{LANGUAGE_HANDLE} || Form::Processor::I18N->get_handle ||
-        die "Failed call to Text::Maketext->get_handle";
-
-    return $lh;
-
-}
-
-
-
-
 
 =item validate
 
@@ -1312,86 +1518,6 @@ Finally, after all fields have been processed:
 If you override validate() make sure you set the flag fields like the validate
 here does.
 
-=cut
-
-sub validate {
-    my ( $self, $params ) = @_;
-
-    $params ||= {};
-
-
-    return $self->validated if $self->ran_validation;
-
-    # Set params -- so can be used by fif later.
-    $self->params( $params );
-
-    $self->set_existing_values if $self->use_existing_values;
-
-    $self->set_dependency;  # set required dependencies
-
-
-    # First pass: trim values and move to "input" slot
-
-    $_->input( $_->trim_value( $params->{ $_->full_name } ) )
-            for $self->fields;
-
-
-
-    # Second pass: Validate each field and "inflate" input -> value.
-
-    for my $field ( $self->fields ) {
-        next if $field->clear;  # Skip validation
-        $field->validate_field;
-    }
-
-
-    # Third pass: call local validation for all *defined* values.
-
-    for my $field ( $self->fields ) {
-        next if $field->clear;  # Skip validation
-        next unless defined $field->value;
-
-        # these methods have access to the inflated values
-        my $method = 'validate_' . $field->name;
-        $self->$method( $field ) if $self->can( $method );
-    }
-
-
-    # only call if no errors?  Only call on validated fields?
-    $self->cross_validate( $params );
-
-
-    # model specific validation (e.g. validation that requires database lookups)
-    $self->model_validate;
-
-
-    $self->clear_dependency;
-
-    # should this be an init_errors method?
-    my $errors;
-    for ( $self->fields ) {
-        $errors++ if $_->errors;
-    }
-
-    $self->errors($errors);
-    $self->ran_validation( 1 );
-    $self->validated( !$errors );
-
-    $self->dump_validated if $self->verbose;
-
-    return $self->validated;
-
-
-}
-
-sub dump_validated {
-    my $self = shift;
-    warn "-- validated --\n";
-    warn $_->name, ": ", ($_->errors ? join(' | ', $_->errors) : 'validated!'),"\n"
-        for $self->fields;
-}
-
-
 =item cross_validate
 
 This item can be overridden in the base class for the form.  It's useful
@@ -1400,105 +1526,18 @@ validated value.
 
 This method is called even if some fields did not validate.
 
-=cut
-
-sub cross_validate { 1 }
-
-
-# here we get a bit more iffy.
-# Remember, this is before white space is trimmed.
-# and before any validation.
-
-sub set_dependency {
-    my $self = shift;
-
-    my $depends = $self->profile->{dependency} || return;
-
-    my $params = $self->params;
-
-    for my $group ( @$depends ) {
-        next if @$group < 2;
-
-        # process a group of fields
-
-        for my $name ( @$group ) {
-
-
-            # is there a value?
-            my $value = $params->{$name};
-
-            next unless defined $value;
-
-
-            # The exception is a boolean can be zero which we count as not set.
-            # This is to allow requiring a field when a boolean is true.
-            next if $self->field($name)->type eq 'Boolean' && $value == 0;
-
-
-            if ( ref $value ) {
-                next unless grep { /\S/ } @$value;  # at least one value is non-blank
-            } else {
-                next unless $value =~ /\S/;
-            }
-
-
-            # one field was found non-blank, so set all to required
-            for ( @$group ) {
-                my $field = $self->field( $_ );
-                next unless $field && !$field->required;
-                $self->add_requires( $field );  # save for clearing later.
-                $field->required(1);
-            }
-            last;
-        }
-    }
-}
-
-sub clear_dependency {
-    my $self = shift;
-
-    $_->required(0) for $self->requires;
-    $self->clear_requires;
-}
-
-
-
-
 =item has_error
 
 Returns true if validate has been called and the form did not
 validate.
 
-=cut
-
-sub has_error {
-    my $self = shift;
-    return $self->ran_validation && !$self->validated;
-}
-
-sub has_errors {
-    for ( shift->fields ) {
-        return 1 if $_->errors;
-    }
-    return 0;
-}
-
 =item error_fields
 
 Returns list of field with errors.
 
-=cut
-
-sub error_fields { return grep { $_->errors } shift->sorted_fields }
-
 =item error_field_name
 
 Returns the names of the fields with errors.
-
-=cut
-
-sub error_field_names { return map { $_->name } shift->error_fields }
-
 
 =item required_text
 
@@ -1508,15 +1547,6 @@ Something like:
 
     <div class="[% field.required_text %]">
 
-=cut
-
-sub required_text {
-    my ( $self, $name ) = @_;
-    return 'unknown' unless $name;
-    return 'unknown' unless my $field = $self->field( $name );
-    return $field->required_text;
-}
-
 =item value
 
 Short cut for:
@@ -1524,15 +1554,6 @@ Short cut for:
     $form->field($name)->value;
 
 Can pass a second true value to avoid die on not found.
-
-=cut
-
-sub value {
-    my ( $form, $name, $no_die ) = @_;
-    my $field = $form->field( $name, $no_die ) || return;
-    return $field->value;
-}
-
 
 =item value_changed
 
@@ -1545,19 +1566,6 @@ And note that:
     'foo' != ['foo']
 
 which is probably incorrect.
-
-=cut
-
-sub value_changed {
-    my ( $self, $name ) = @_;
-    croak "value_chagned requires a field name" unless $name;
-
-    my $field = ref ($name) ? $name : $self->field( $name );
-    croak "Failed to lookup field name [$name]\n" unless $field;
-
-    return $field->value_changed;
-}
-
 
 =item use_existing_values
 
@@ -1585,54 +1593,16 @@ not inspect the key's value.
 
 This is implemented by set_existing_values.
 
-
 =item set_existing_values EXPERIMENTAL
-
 
 This method will load existing values into params for any not supplied.
 
 This does not work on compound fields.
 
-=cut
-
-sub set_existing_values {
-    my $form = shift;
-
-    my $params = $form->params;
-
-    for my $field ( $form->fields ) {
-
-        # Does the field insist that the value must be provided?
-        next if $field->must_submit;
-
-        my $name = $field->name;
-        next if exists $params->{$name};
-
-        next if $field->writeonly;
-
-        my %hash_params = $field->format_value;
-
-        $form->params( %hash_params );
-    }
-}
-
-
-
-
 =item uuid
 
 Generates a hidden html field with a unique ID which
 the model class can use to check for duplicate form postings.
-
-=cut
-
-sub uuid {
-    my $form = shift;
-    require Data::UUID;
-    my $uuid = Data::UUID->new->create_str;
-    return qq[<input type="hidden" name="form_uuid" value="$uuid">];
-}
-
 
 =item parent_field
 
@@ -1650,20 +1620,7 @@ on the year field.
 
 This stores a weakened value.
 
-=cut
-
-sub parent_field {
-    my $self = shift;
-    return Scalar::Util::weaken( $self->{parent_field} = shift ) if ( @_ );
-    return $self->{parent_field};
-}
-
-
-
-
 =back
-
-
 
 =head1 CREATING A MODEL CLASS
 
@@ -1672,8 +1629,6 @@ database and the form, typically via an object relational
 mapping tool (ORM).
 
 See L<Form::Processor::Model> for details.
-
-
 
 =head1 THINGS TO WONDER ABOUT
 
@@ -1697,29 +1652,21 @@ Init from object happens in Form::Processor, too.  It would be nice to have each
 field know how to initalize from the source object.  But, that doesn't work well
 with overriding Form::Processor with the Model class.
 
-
-=head1 AUTHOR
-
-Bill Moseley - with *much* help from John Siracusa
-
-=head1 COPYRIGHT
-
-L<Form::Processor> is Copyright (c) 2006-2007 Bill Moseley.  All rightes
-reserved.
-
-This library is free software, you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
 =head1 SUPPORT / WARRANTY
 
 L<Form::Processor> is free software and is provided WITHOUT WARRANTY OF ANY KIND.
 Users are expected to review software for fitness and usability.
 
+=head1 AUTHOR
+
+Bill Moseley <mods@hank.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Bill Moseley.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-1;
-
-
-
-
 

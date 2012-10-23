@@ -8,16 +8,15 @@ plan tests => $tests;
 # not too useful -- considering extensions
 my $class = 'Form::Processor::Field::USPhone';
 
-my $name = $1 if $class =~ /::([^:]+)$/;
 
 use_ok( $class );
 my $field = $class->new(
-    name    => 'test_field',
-    type    => $name,
-    form    => undef,
+    name => 'test_field',
+    type => 'USPhone',
+    form => undef,
 );
 
-ok( defined $field,  'new() called' );
+ok( defined $field, 'new() called' );
 
 $field->input( '555 555-1212' );
 $field->validate_field;
